@@ -15,7 +15,7 @@ ForceCodeX is a lightweight coding-practice platform designed for 1st- and 2nd-y
 
 ## Tech stack
 
-- Backend: NestJS, Prisma, Postgres
+- Backend: FastAPI, Postgres
 - Frontend: Next.js
 - Tooling: Yarn / npm (Bun compatible), TypeScript, Jest
 
@@ -26,19 +26,13 @@ ForceCodeX is a lightweight coding-practice platform designed for 1st- and 2nd-y
 2. Backend — install, generate Prisma client, and run:
 
 ```bash
-cd backend
-yarn install
-npx prisma generate
-yarn dev
+cd fastapi
 ```
 
 If you prefer Bun:
 
 ```bash
-cd backend
-bun install
-npx prisma generate
-bun dev
+cd fastapi
 ```
 
 3. Frontend — install and run:
@@ -62,12 +56,8 @@ bun dev
 Run unit and integration tests from the respective folders:
 
 ```bash
-cd backend
-yarn test
-yarn test:e2e
-
-cd ../frontend
-yarn test
+cd fastapi
+python test
 ```
 
 ## How to use / extend
