@@ -27,12 +27,14 @@ ForceCodeX is a lightweight coding-practice platform designed for 1st- and 2nd-y
 
 ```bash
 cd fastapi
+python main.py
 ```
 
 If you prefer Bun:
 
 ```bash
 cd fastapi
+bun  run main.py
 ```
 
 3. Frontend — install and run:
