@@ -7,6 +7,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(
+        "user_id",
         UUID(as_uuid=True),
         primary_key=True,
         index=True,
@@ -14,4 +15,4 @@ class User(Base):
         nullable=False
     )
     email = Column(String, unique=True, index=True, nullable=False)
-    name = Column(String, nullable=False)
+    name = Column("full_name", String, nullable=False)
