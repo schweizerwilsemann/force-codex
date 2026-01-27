@@ -50,8 +50,6 @@ def login_access_token(
     db.add(db_refresh_token)
     db.commit()
 
-    db.add(db_refresh_token)
-    db.commit()
 
     return {
         "access_token": access_token,
@@ -84,7 +82,11 @@ def refresh_token(
     if db_token.revoked:
         raise HTTPException(status_code=401, detail="Token revoked")
         
-    if db_token.expires_at < datetime.now(timezone.utc):
+    # Handle both timezone-aware and naive datetimes from the database
+    expires_at = db_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="Token expired")
         
     # Get user
@@ -107,4 +109,5 @@ def refresh_token(
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
+        "role": user.role.role_name if user.role else "student"
     }
