@@ -78,6 +78,20 @@ python test
 - Practice OOP design, interfaces, and modular code.
 - Learn to test and debug code in a full-stack environment.
 
-## License
+## Test Account
 
+A default admin account is created by running the seed script:
+- **Email:** `admin@example.com`
+- **Password:** `admin123`
+
+### Lecturer
+- **Email:** `lecturer@example.com`
+- **Password:** `lecturer123`
+
+### Student
+- **Email:** `student@example.com`
+- **Password:** `student123`
+- **Student Code:** `STU001`
+
+## License
 MIT
