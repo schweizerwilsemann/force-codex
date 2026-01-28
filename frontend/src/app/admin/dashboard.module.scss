@@ -1,0 +1,131 @@
+/* Dashboard Styles */
+.container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+    padding: 2rem;
+}
+
+.wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.header {
+    margin-bottom: 2rem;
+
+    h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 0.5rem;
+    }
+
+    p {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 1rem;
+    }
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.statCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .iconWrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+
+        &.blue {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        &.green {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        &.purple {
+            background: rgba(168, 85, 247, 0.2);
+        }
+
+        &.orange {
+            background: rgba(249, 115, 22, 0.2);
+        }
+    }
+
+    .value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 0.25rem;
+    }
+
+    .label {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.9rem;
+    }
+}
+
+.quickActions {
+    margin-bottom: 3rem;
+
+    h2 {
+        font-size: 1.5rem;
+        color: #fff;
+        margin-bottom: 1.5rem;
+    }
+
+    .actionsGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .actionCard {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .icon {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1rem;
+        }
+
+        span {
+            color: #fff;
+            font-weight: 500;
+        }
+    }
+}
