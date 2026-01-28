@@ -13,6 +13,7 @@ import tempfile
 import subprocess
 from pathlib import Path
 import signal
+import psutil
 
 # Config
 REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
@@ -151,6 +152,21 @@ def run_test_case(executable_path, test_input, test_output, time_limit, memory_l
                 preexec_fn=os.setpgrp  # Create new process group
             )
             
+            # Memory monitoring
+            max_memory_usage = 0
+            try:
+                p = psutil.Process(process.pid)
+                # Monitor while process is running
+                while process.poll() is None:
+                    try:
+                        mem_info = p.memory_info()
+                        max_memory_usage = max(max_memory_usage, mem_info.rss)
+                    except psutil.NoSuchProcess:
+                        break
+                    time.sleep(0.01) # Check every 10ms
+            except Exception:
+                pass
+            
             try:
                 # Wait with timeout (convert ms to seconds)
                 stdout, stderr = process.communicate(timeout=time_limit / 1000.0)
@@ -161,7 +177,7 @@ def run_test_case(executable_path, test_input, test_output, time_limit, memory_l
                     return {
                         'status': 'runtime_error',
                         'execution_time': execution_time,
-                        'memory_used': 0,  # Can't measure with subprocess
+                        'memory_used': int(max_memory_usage / 1024),  # Bytes -> KB
                         'actual_output': stdout,
                         'error_message': stderr if stderr else f'Exit code: {process.returncode}'
                     }
@@ -174,7 +190,7 @@ def run_test_case(executable_path, test_input, test_output, time_limit, memory_l
                     return {
                         'status': 'passed',
                         'execution_time': execution_time,
-                        'memory_used': 0,  # Can't measure accurately
+                        'memory_used': int(max_memory_usage / 1024),  # Bytes -> KB
                         'actual_output': stdout,
                         'error_message': None
                     }
