@@ -9,76 +9,86 @@ ForceCodeX is a lightweight coding-practice platform designed for 1st- and 2nd-y
 
 ## Features
 
-- Example frontend and backend (NestJS + Next.js) to demonstrate full-stack workflow.
-- Database-backed problem storage using Prisma and Postgres.
-- Local seeding and test scripts so students can run examples and verify solutions.
+- **Coding System**: Solve algorithms in C/C++ with a real-time Monaco Editor.
+- **Auto-grading**: Local `judge-worker` executes code using `subprocess` (secure sandbox planned) and verifies against test cases.
+- **Full-Stack**: FastAPI backend with SQLAlchemy/Postgres, Next.js frontend with React Query.
 
 ## Tech stack
 
-- Backend: FastAPI, Postgres
-- Frontend: Next.js
-- Tooling: Yarn / npm (Bun compatible), TypeScript, Jest
+- **Backend**: FastAPI, Postgres, Redis, SQLAlchemy
+- **Frontend**: Next.js, Yarn, Monaco Editor, SASS
+- **Worker**: Python, Redis Queue, GCC/G++
 
 ## Quick start
 
-1. Set up a Postgres database and copy `backend/.env.example` to `backend/.env` (or create `backend/.env`) and set `DATABASE_URL`.
+### Prerequisites
+- Python 3.10+
+- Node.js & Yarn
+- Postgres Database
+- Redis Server (for job queue)
+- GCC/G++ (for executing C/C++ code)
 
-2. Backend — install, generate Prisma client, and run:
-
-```bash
-cd fastapi
-python main.py
-```
-
-If you prefer Bun:
+### 1. Backend Setup
 
 ```bash
 cd fastapi
-bun  run main.py
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate
+
+# Install dependencies (includes redis, sqlalchemy, psycopg2)
+pip install -r requirements.txt
+
+# Run Database Migrations / Create Tables (Auto-created on start for now)
+# python -m app.main 
+
+# Start API Server
+uvicorn app.main:app --reload
 ```
 
-3. Frontend — install and run:
+### 2. Judge Worker Setup (Required for Code Execution)
 
+Open a new terminal:
+```bash
+cd judge-worker
+# Ensure you are in the same venv or install dependencies
+source ../fastapi/venv/bin/activate
+
+# Run the worker
+python worker.py
+```
+
+### 3. Frontend Setup
+
+Open a new terminal:
 ```bash
 cd frontend
+# Install dependencies
 yarn install
+
+# Start Dev Server
 yarn dev
 ```
 
-or with Bun:
+Visit `http://localhost:3000` to access the application.
+
+## Seed Data
+
+To populate the database with a sample "A+B Problem" and test users:
 
 ```bash
-cd frontend
-bun install
-bun dev
+cd judge-worker
+python test_submit.py
 ```
 
 ## Running tests
 
-Run unit and integration tests from the respective folders:
-
 ```bash
 cd fastapi
-python test
+pytest
 ```
 
-## How to use / extend
-
-- Add new practice problems and test cases in the backend feature modules and expose endpoints for the frontend to fetch problems and submit solutions.
-- Encourage small, well-typed functions and include unit tests demonstrating expected behavior.
-
-## Contributing
-
-- Follow existing TypeScript and lint rules. Run `yarn lint` and `yarn test` before submitting PRs.
-- Keep solutions readable and include comments when a solution uses a non-obvious approach.
-
-## Learning goals
-
-- Build confidence solving DSA problems (arrays, strings, linked lists, trees, graphs, dynamic programming).
-- Practice OOP design, interfaces, and modular code.
-- Learn to test and debug code in a full-stack environment.
-
-## Test Account
+## Test Accounts
 
 A default admin account is created by running the seed script:
 - **Email:** `admin@example.com`
