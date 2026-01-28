@@ -1,0 +1,135 @@
+/* Admin Courses Page */
+.container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+    padding: 2rem;
+}
+
+.wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+
+    .titleSection {
+        h1 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+    }
+
+    .addBtn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        border-radius: 12px;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+    }
+}
+
+.searchBox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+
+    input {
+        flex: 1;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 0.95rem;
+        outline: none;
+
+        &::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+    }
+
+    svg {
+        color: rgba(255, 255, 255, 0.4);
+    }
+}
+
+.content {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 3rem;
+}
+
+.emptyState {
+    text-align: center;
+
+    .icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+    }
+
+    h3 {
+        color: #fff;
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    p {
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.5rem;
+    }
+
+    .note {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.85rem;
+        max-width: 500px;
+        margin: 1rem auto 0;
+    }
+
+    .features {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .featureItem {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.9rem;
+
+        svg {
+            color: #667eea;
+        }
+    }
+}
