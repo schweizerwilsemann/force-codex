@@ -57,12 +57,12 @@ export default function UsersPage() {
         <div className={styles.container}>
             <div className={styles.wrapper}>
                 <div className={styles.header}>
-                    <h1>User Management</h1>
+                    <h1>Quản Lý Người Dùng</h1>
                     <button
                         onClick={() => setShowModal(true)}
                         className={styles.addButton}
                     >
-                        Add User
+                        Thêm Người Dùng
                     </button>
                 </div>
 
@@ -75,10 +75,10 @@ export default function UsersPage() {
                         <table className={styles.table}>
                             <thead>
                                 <tr>
-                                    <th>Name</th>
+                                    <th>Tên</th>
                                     <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
+                                    <th>Vai trò</th>
+                                    <th>Trạng thái</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -95,9 +95,9 @@ export default function UsersPage() {
                                         </td>
                                         <td>
                                             {user.is_active ? (
-                                                <span className={styles.active}>Active</span>
+                                                <span className={styles.active}>Hoạt động</span>
                                             ) : (
-                                                <span className={styles.inactive}>Inactive</span>
+                                                <span className={styles.inactive}>Không hoạt động</span>
                                             )}
                                         </td>
                                     </tr>
@@ -111,7 +111,7 @@ export default function UsersPage() {
                 {showModal && (
                     <div className={styles.modalOverlay}>
                         <div className={styles.modalContent}>
-                            <h2>Create New User</h2>
+                            <h2>Tạo Người Dùng Mới</h2>
                             <form onSubmit={handleCreateUser}>
                                 <div className={styles.formGroup}>
                                     <label>Email</label>
@@ -123,7 +123,7 @@ export default function UsersPage() {
                                     />
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label>Full Name</label>
+                                    <label>Tên đầy đủ</label>
                                     <input
                                         type="text"
                                         required
@@ -132,20 +132,20 @@ export default function UsersPage() {
                                     />
                                 </div>
                                 <div className={styles.formGroup}>
-                                    <label>Role</label>
+                                    <label>Vai trò</label>
                                     <select
                                         value={newUser.role_name}
                                         onChange={e => setNewUser({ ...newUser, role_name: e.target.value })}
                                     >
-                                        <option value="student">Student</option>
-                                        <option value="lecturer">Lecturer</option>
+                                        <option value="student">Sinh viên</option>
+                                        <option value="lecturer">Giảng viên</option>
                                     </select>
                                 </div>
 
                                 {newUser.role_name === 'student' && (
                                     <>
                                         <div className={styles.formGroup}>
-                                            <label>Student Code</label>
+                                            <label>Mã sinh viên</label>
                                             <input
                                                 type="text"
                                                 required
@@ -154,7 +154,7 @@ export default function UsersPage() {
                                             />
                                         </div>
                                         <div className={styles.formGroup}>
-                                            <label>Class</label>
+                                            <label>Lớp</label>
                                             <input
                                                 type="text"
                                                 value={newUser.class_name}
@@ -166,7 +166,7 @@ export default function UsersPage() {
                                 {newUser.role_name === 'lecturer' && (
                                     <>
                                         <div className={styles.formGroup}>
-                                            <label>Lecturer Code</label>
+                                            <label>Mã giảng viên</label>
                                             <input
                                                 type="text"
                                                 required
@@ -175,7 +175,7 @@ export default function UsersPage() {
                                             />
                                         </div>
                                         <div className={styles.formGroup}>
-                                            <label>Department</label>
+                                            <label>Khoa</label>
                                             <input
                                                 type="text"
                                                 value={newUser.department}
@@ -191,13 +191,13 @@ export default function UsersPage() {
                                         onClick={() => setShowModal(false)}
                                         className={styles.cancelBtn}
                                     >
-                                        Cancel
+                                        Hủy
                                     </button>
                                     <button
                                         type="submit"
                                         className={styles.submitBtn}
                                     >
-                                        Create
+                                        Tạo
                                     </button>
                                 </div>
                             </form>
