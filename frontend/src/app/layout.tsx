@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   description: "Based on Next.js",
 };
 
+import { Suspense } from "react";
+
+// ... existing imports ...
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,9 +33,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <Providers>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
+          <Suspense fallback={<div>Loading...</div>}>
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </Suspense>
         </Providers>
       </body>
     </html >

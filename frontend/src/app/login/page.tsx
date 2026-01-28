@@ -32,8 +32,11 @@ export default function LoginPage() {
             const data = await authService.login(email, password);
             if (data.role === 'student') {
                 router.push('/student/exams');
+            } else if (data.role === 'lecturer') {
+                router.push('/lecturer'); // Dashboard
             } else {
-                router.push('/admin/users');
+                // admin
+                router.push('/admin'); // Dashboard
             }
         } catch (err: any) {
             setError(err.message);
@@ -47,17 +50,17 @@ export default function LoginPage() {
             <div className={styles.wrapper}>
                 <div className={styles.header}>
                     <h2>
-                        Sign in to your account
+                        Đăng nhập tài khoản
                     </h2>
                     <p>
-                        ForceCodeX Learning Platform
+                        Nền tảng học tập ForceCodeX
                     </p>
                 </div>
                 <form className={styles.form} onSubmit={handleSubmit}>
                     <div className={styles.inputGroup}>
                         <div>
                             <label style={{ color: 'white', fontWeight: 'bold' }} htmlFor="email-address" className="sr-only">
-                                Email address
+                                Địa chỉ email
                             </label>
                             <input
                                 id="email-address"
@@ -66,14 +69,14 @@ export default function LoginPage() {
                                 autoComplete="email"
                                 required
                                 className={styles.input}
-                                placeholder="Email address"
+                                placeholder="Địa chỉ email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
                         <div>
                             <label style={{ color: 'white', fontWeight: 'bold' }} htmlFor="password" className="sr-only">
-                                Password
+                                Mật khẩu
                             </label>
                             <input
                                 id="password"
@@ -82,7 +85,7 @@ export default function LoginPage() {
                                 autoComplete="current-password"
                                 required
                                 className={styles.input}
-                                placeholder="Password"
+                                placeholder="Mật khẩu"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
@@ -101,7 +104,7 @@ export default function LoginPage() {
                             disabled={loading}
                             className={styles.button}
                         >
-                            {loading ? 'Signing in...' : 'Sign in'}
+                            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
                         </button>
                     </div>
                 </form>
