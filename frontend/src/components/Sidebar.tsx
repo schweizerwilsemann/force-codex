@@ -52,7 +52,12 @@ export default function Sidebar({ title, role }: SidebarProps) {
     };
 
     const renderMenuItem = (item: Menu) => {
-        const isActive = pathname === item.path || (item.path !== '#' && pathname.startsWith(item.path + '/'));
+        const isActive = pathname === item.path || (
+            item.path !== '#' &&
+            pathname.startsWith(item.path + '/') &&
+            // Don't highlight root paths like /admin, /lecturer, /student when on subpages
+            !['/admin', '/lecturer', '/student'].includes(item.path)
+        );
         const hasChildren = item.children && item.children.length > 0;
 
         return (
@@ -79,11 +84,21 @@ export default function Sidebar({ title, role }: SidebarProps) {
         </aside>
     );
 
+    // Get role class for styling
+    const getRoleClass = () => {
+        switch (role.toLowerCase()) {
+            case 'admin': return styles.adminRole;
+            case 'lecturer': return styles.lecturerRole;
+            case 'student': return styles.studentRole;
+            default: return '';
+        }
+    };
+
     return (
-        <aside className={styles.sidebar}>
+        <aside className={`${styles.sidebar} ${getRoleClass()}`}>
             <div className={styles.header}>
                 <div className={styles.logo}>ForceCodeX</div>
-                <div className={styles.role}>{role}</div>
+                <div className={styles.roleBadge}>{role === 'Admin' ? 'Quản Trị' : role === 'Lecturer' ? 'Giảng Viên' : 'Sinh Viên'}</div>
             </div>
 
             <nav className={styles.nav}>
@@ -95,7 +110,7 @@ export default function Sidebar({ title, role }: SidebarProps) {
 
             <div className={styles.footer}>
                 <button onClick={handleLogout} className={styles.logoutBtn}>
-                    Sign Out
+                    Đăng xuất
                 </button>
             </div>
         </aside>
