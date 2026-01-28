@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from app.routers import users, auth, menus
+from app.routers import users, auth, menus, coding
+from app.models import coding as coding_models # Register models
 from app.db.database import engine, Base
 from app.core.config import settings
 
@@ -35,6 +36,7 @@ elif True: # Fallback for development if not in settings yet
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
 app.include_router(menus.router, prefix=f"{settings.API_V1_STR}/menus", tags=["menus"])
+app.include_router(coding.router, prefix=f"{settings.API_V1_STR}/coding", tags=["coding"])
 
 @app.get("/")
 def read_root():

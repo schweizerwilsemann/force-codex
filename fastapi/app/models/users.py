@@ -32,6 +32,7 @@ class Student(Base):
     major = Column(String(100))
 
     user = relationship("User", back_populates="student_profile")
+    submissions = relationship("app.models.coding.Submission", back_populates="student")
 
 class Lecturer(Base):
     __tablename__ = "lecturers"
@@ -41,6 +42,7 @@ class Lecturer(Base):
     department = Column(String(100))
 
     user = relationship("User", back_populates="lecturer_profile")
+    classes = relationship("app.models.coding.Class", back_populates="lecturer")
 
 class InitialPassword(Base):
     __tablename__ = "initial_passwords"
