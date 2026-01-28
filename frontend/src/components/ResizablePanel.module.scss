@@ -1,0 +1,48 @@
+.container {
+    display: flex;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+    background: #1e1e1e;
+}
+
+.leftPanel {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.rightPanel {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.resizer {
+    width: 8px;
+    background: #2d2d2d;
+    cursor: col-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+
+    &:hover,
+    &.dragging {
+        background: #404040;
+
+        .resizerLine {
+            background: #667eea;
+        }
+    }
+
+    .resizerLine {
+        width: 2px;
+        height: 40px;
+        background: #555;
+        border-radius: 1px;
+        transition: background 0.2s ease;
+    }
+}
