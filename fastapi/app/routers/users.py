@@ -84,3 +84,58 @@ def read_users(
     """
     service = UserService(db)
     return service.get_users(skip, limit)
+
+
+@router.post("/bulk-import", response_model=schemas.BulkImportResult)
+async def bulk_import_students(
+    *,
+    db: Session = Depends(get_db),
+    import_data: schemas.BulkStudentImport,
+    current_user: models.User = Depends(get_current_active_user),
+    background_tasks: BackgroundTasks
+) -> Any:
+    """
+    Bulk import students with optional class enrollment.
+    Admin and Lecturer can use this.
+    """
+    if not current_user.role or current_user.role.role_name not in ['admin', 'lecturer']:
+        raise HTTPException(status_code=403, detail="Không có quyền import sinh viên")
+    
+    service = UserService(db)
+
+    return service.bulk_import_students(import_data, current_user, background_tasks)
+
+
+@router.post("/send-activation-emails", response_model=dict)
+async def send_activation_emails(
+    *,
+    db: Session = Depends(get_db),
+    email_request: schemas.UserEmailRequest,
+    current_user: models.User = Depends(get_current_active_user),
+    background_tasks: BackgroundTasks
+) -> Any:
+    """
+    Manually trigger activation emails for users.
+    Only Admin or Lecturer can do this.
+    """
+    if not current_user.role or current_user.role.role_name not in ['admin', 'lecturer']:
+        raise HTTPException(status_code=403, detail="Không có quyền gửi email")
+    
+    service = UserService(db)
+    return service.send_activation_emails(email_request.user_ids, background_tasks)
+
+
+@router.get("/students", response_model=List[dict])
+def get_students(
+    class_id: str = None,
+    course_id: str = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get students, optionally filtered by class.
+    """
+    service = UserService(db)
+    return service.get_students(class_id, course_id, skip, limit)
