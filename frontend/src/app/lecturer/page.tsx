@@ -69,7 +69,7 @@ export default function LecturerDashboard() {
                             <BookOpen color="#22c55e" size={24} />
                         </div>
                         <div className={styles.value}>{stats.courses}</div>
-                        <div className={styles.label}>Khóa học</div>
+                        <div className={styles.label}>Học phần</div>
                     </div>
                     <div className={styles.statCard}>
                         <div className={`${styles.iconWrapper} ${styles.orange}`}>
