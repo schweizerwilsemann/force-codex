@@ -26,6 +26,7 @@ class UserCreate(UserBase):
     class_name: Optional[str] = None
     year_of_admission: Optional[int] = None
     major: Optional[str] = None
+    initial_class_id: Optional[uuid.UUID] = None  # Enrollment on creation
     # Lecturer specific
     lecturer_code: Optional[str] = None
     department: Optional[str] = None
@@ -48,3 +49,38 @@ class User(UserInDBBase):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+# --- Bulk Student Import Schemas ---
+
+class StudentImportItem(BaseModel):
+    """Single student data for import"""
+    student_code: str
+    full_name: str
+    email: EmailStr
+    class_name: Optional[str] = None
+    year_of_admission: Optional[int] = None
+    major: Optional[str] = None
+
+
+class BulkStudentImport(BaseModel):
+    """Bulk import request with class enrollment"""
+    class_id: Optional[uuid.UUID] = None  # Optional: enroll all students in this class
+    course_id: Optional[uuid.UUID] = None # Optional: context for creating classes if missing
+    students: List[StudentImportItem]
+
+
+class BulkImportResult(BaseModel):
+    """Result of bulk import operation"""
+    total: int
+    created: int
+    enrolled: int  # Existing students enrolled
+    skipped: int
+    errors: List[str]
+    created_students: List[dict]
+    enrolled_students: List[dict]
+
+
+class UserEmailRequest(BaseModel):
+    """Request to send activation emails to users"""
+    user_ids: List[uuid.UUID]

@@ -19,7 +19,7 @@ class TestCase(TestCaseBase):
     problem_id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Problem Schemas ---
 class ProblemBase(BaseModel):
@@ -43,7 +43,7 @@ class Problem(ProblemBase):
     sample_test_cases: List[TestCase] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Submission Schemas ---
 class SubmissionBase(BaseModel):
@@ -66,7 +66,7 @@ class SubmissionTestResult(BaseModel):
     error_message: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Submission(SubmissionBase):
     submission_id: UUID
@@ -83,7 +83,7 @@ class Submission(SubmissionBase):
     test_results: List[SubmissionTestResult] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- List Response ---
 class ProblemList(BaseModel):
@@ -93,7 +93,7 @@ class ProblemList(BaseModel):
     difficulty: str
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SubmissionListItem(BaseModel):
     """Lightweight schema for submission history list"""
@@ -106,4 +106,4 @@ class SubmissionListItem(BaseModel):
     created_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
