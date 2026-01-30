@@ -24,7 +24,8 @@ from app.db.database import Base
 from app.models.roles import Role
 from app.models.tokens import RefreshToken
 from app.models.users import User, Student, Lecturer, InitialPassword
-from app.models.menus import Menu # Added Menu model
+from app.models.menus import Menu 
+from app.models import coding # Added coding models
 
 # add your model's MetaData object here
 # for 'autogenerate' support

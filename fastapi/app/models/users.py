@@ -27,11 +27,14 @@ class Student(Base):
 
     student_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
     student_code = Column(String(20), unique=True, nullable=False, index=True)
-    class_name = Column(String(100))
+    class_name = Column(String(100))  # Legacy field
+    class_id = Column(UUID(as_uuid=True), ForeignKey("classes.class_id"))  # New FK to administrative class
     year_of_admission = Column(Integer)
     major = Column(String(100))
 
     user = relationship("User", back_populates="student_profile")
+    admin_class = relationship("app.models.coding.Class", back_populates="students")
+    course_enrollments = relationship("app.models.coding.CourseEnrollment", back_populates="student")
     submissions = relationship("app.models.coding.Submission", back_populates="student")
 
 class Lecturer(Base):

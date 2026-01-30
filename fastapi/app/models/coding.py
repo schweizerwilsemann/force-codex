@@ -15,20 +15,40 @@ class Course(Base):
     programming_languages = Column(ARRAY(String))
     
     problems = relationship("Problem", back_populates="course")
-    classes = relationship("Class", back_populates="course")
+    assignments = relationship("Assignment", back_populates="course")
+    enrollments = relationship("CourseEnrollment", back_populates="course")
 
 class Class(Base):
+    """Administrative class - students belong to one class"""
     __tablename__ = "classes"
     
     class_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    course_id = Column(UUID(as_uuid=True), ForeignKey("courses.course_id"), nullable=False)
     class_code = Column(String, unique=True, nullable=False)
     lecturer_id = Column(UUID(as_uuid=True), ForeignKey("lecturers.lecturer_id"))
     semester = Column(String)
+    academic_year = Column(String(20))
+    department = Column(String(100))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     
-    course = relationship("Course", back_populates="classes")
     lecturer = relationship("app.models.users.Lecturer", back_populates="classes")
-    assignments = relationship("Assignment", back_populates="class_")
+    students = relationship("app.models.users.Student", back_populates="admin_class")
+
+
+class CourseEnrollment(Base):
+    """Student enrollment in a course (academic subject)"""
+    __tablename__ = "course_enrollments"
+    
+    enrollment_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    course_id = Column(UUID(as_uuid=True), ForeignKey("courses.course_id"), nullable=False)
+    student_id = Column(UUID(as_uuid=True), ForeignKey("students.student_id"), nullable=False)
+    enrolled_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    status = Column(String, default="active")
+    
+    course = relationship("Course", back_populates="enrollments")
+    student = relationship("app.models.users.Student", back_populates="course_enrollments")
+
+
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -66,13 +86,16 @@ class Assignment(Base):
     __tablename__ = "assignments"
     
     assignment_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    class_id = Column(UUID(as_uuid=True), ForeignKey("classes.class_id"), nullable=False)
+    course_id = Column(UUID(as_uuid=True), ForeignKey("courses.course_id"), nullable=False)
     problem_id = Column(UUID(as_uuid=True), ForeignKey("problems.problem_id"), nullable=False)
     title = Column(String)
     description = Column(Text)
     max_score = Column(Integer, default=100)
+    start_date = Column(TIMESTAMP(timezone=True))
+    due_date = Column(TIMESTAMP(timezone=True))
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     
-    class_ = relationship("Class", back_populates="assignments")
+    course = relationship("Course", back_populates="assignments")
     problem = relationship("Problem", back_populates="assignments")
     submissions = relationship("Submission", back_populates="assignment")
 
