@@ -23,7 +23,13 @@ class MenuService:
         if not user.role:
             raise HTTPException(status_code=400, detail="User has no role assigned")
         
-        return self.repo.get_roots_by_role(user.role.role_name)
+        menus = self.repo.get_roots_by_role(user.role.role_name)
+        
+        # Filter out User Management for Lecturers (if it exists in DB)
+        if user.role.role_name == 'lecturer':
+            menus = [m for m in menus if m.path != '/lecturer/users' and m.title != 'User Management']
+            
+        return menus
 
     def get_all_menus(self, user: User, role_filter: Optional[str] = None) -> list[Menu]:
         """Get all menus. Admin only."""
