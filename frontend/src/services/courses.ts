@@ -20,6 +20,9 @@ export interface Class {
     lecturer_id?: string;
     lecturer_name?: string;
     student_count?: number;
+    course_id: string;
+    course_name?: string;
+    assignment_count?: number;
 }
 
 export interface Assignment {
@@ -137,7 +140,7 @@ export const classService = {
         return response.json();
     },
 
-    async createClass(data: { class_code: string; lecturer_id?: string; semester?: string; academic_year?: string; department?: string }): Promise<Class> {
+    async createClass(data: { class_code: string; course_id: string; lecturer_id?: string; semester?: string; academic_year?: string; department?: string }): Promise<Class> {
         const response = await fetchWithAuth('/classes/', {
             method: 'POST',
             body: JSON.stringify(data)

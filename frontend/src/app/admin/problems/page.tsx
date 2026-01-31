@@ -106,8 +106,8 @@ export default function AdminProblemsPage() {
             title: problem.title,
             description: problem.description || '',
             difficulty: problem.difficulty,
-            time_limit: problem.time_limit,
-            memory_limit: problem.memory_limit,
+            time_limit: problem.time_limit ?? 0,
+            memory_limit: problem.memory_limit ?? 0,
             allowed_languages: problem.allowed_languages || ['C', 'C++']
         });
         setShowModal(true);
@@ -384,7 +384,7 @@ export default function AdminProblemsPage() {
                                         <label>Giới hạn thời gian (ms)</label>
                                         <input
                                             type="number"
-                                            value={formData.time_limit}
+                                            value={formData.time_limit ?? ''}
                                             onChange={(e) => setFormData({ ...formData, time_limit: parseInt(e.target.value) })}
                                         />
                                     </div>
@@ -392,7 +392,7 @@ export default function AdminProblemsPage() {
                                         <label>Giới hạn bộ nhớ (MB)</label>
                                         <input
                                             type="number"
-                                            value={formData.memory_limit}
+                                            value={formData.memory_limit ?? ''}
                                             onChange={(e) => setFormData({ ...formData, memory_limit: parseInt(e.target.value) })}
                                         />
                                     </div>
