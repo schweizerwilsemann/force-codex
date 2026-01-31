@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from app.schemas import users as schemas
-from app.crud.user_repository import UserRepository
+from app.repositories.user_repository import UserRepository
 from app.core import security
 from app.services import email
 from app.models import users as models
@@ -371,37 +371,24 @@ class UserService:
         from app.models import coding as coding_models
         from uuid import UUID
 
-        # Base query: Users who are students
-        query = self.db.query(
-            models.User,
-            models.Student
-        ).join(
-            models.Student, models.User.user_id == models.Student.student_id
-        )
-
         if class_id:
             try:
                 class_uuid = UUID(class_id)
-                # NEW: Filter by Student.class_id (administrative class)
-                query = query.filter(models.Student.class_id == class_uuid)
             except ValueError:
-                pass
+                class_uuid = None
+        else:
+             class_uuid = None
         
-        elif course_id:
+        if course_id:
             try:
                 course_uuid = UUID(course_id)
-                # NEW: Join through CourseEnrollment (student -> course directly)
-                query = query.join(
-                    coding_models.CourseEnrollment,
-                    models.Student.student_id == coding_models.CourseEnrollment.student_id
-                ).filter(
-                    coding_models.CourseEnrollment.course_id == course_uuid,
-                    coding_models.CourseEnrollment.status == "active"
-                ).distinct()
             except ValueError:
-                pass
-
-        results = query.offset(skip).limit(limit).all()
+                course_uuid = None
+        else:
+             course_uuid = None
+        
+        # Use Repository
+        results = self.repo.get_students_by_filter(class_uuid, course_uuid, skip, limit)
 
         return [
             {

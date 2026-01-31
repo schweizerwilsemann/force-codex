@@ -110,6 +110,38 @@ export const userService = {
             throw new Error(error.detail || 'Failed to create user');
         }
         return response.json();
+    },
+
+    async bulkImportStudents(data: { class_id?: string; course_id?: string; students: any[] }) {
+        const response = await fetchWithAuth('/users/bulk-import', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to import students');
+        }
+        return response.json();
+    },
+
+    async getStudents(classId?: string, courseId?: string) {
+        const params = new URLSearchParams();
+        if (classId) params.append('class_id', classId);
+        if (courseId) params.append('course_id', courseId);
+
+        const url = `/users/students?${params.toString()}`;
+        const response = await fetchWithAuth(url);
+        if (!response.ok) throw new Error('Failed to fetch students');
+        return response.json();
+    },
+
+    async sendActivationEmails(userIds: string[]) {
+        const response = await fetchWithAuth('/users/send-activation-emails', {
+            method: 'POST',
+            body: JSON.stringify({ user_ids: userIds })
+        });
+        if (!response.ok) throw new Error('Failed to send emails');
+        return response.json();
     }
 };
 

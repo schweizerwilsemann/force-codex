@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import users, auth, menus, coding, courses, classes, assignments, enrollments
+from app.api.v1.endpoints import users, auth, menus, coding, courses, classes, assignments, enrollments
 from app.models import coding as coding_models # Register models
 from app.db.database import engine, Base
 from app.core.config import settings

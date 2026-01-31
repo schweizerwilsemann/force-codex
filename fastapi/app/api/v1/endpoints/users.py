@@ -6,7 +6,7 @@ from app.db.database import get_db
 from app.models import users as models
 from app.schemas import users as schemas
 from app.core.config import settings
-from app.crud.user_repository import UserRepository
+from app.repositories.user_repository import UserRepository
 from app.services.user_service import UserService
 
 from fastapi.security import OAuth2PasswordBearer

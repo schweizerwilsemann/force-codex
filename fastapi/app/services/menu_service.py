@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from app.crud.menu_repository import MenuRepository
+from app.repositories.menu_repository import MenuRepository
 from app.models.users import User
 from app.models.menus import Menu
 from app.schemas.menus import MenuCreate

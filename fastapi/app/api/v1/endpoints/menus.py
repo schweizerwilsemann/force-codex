@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.schemas.menus import MenuCreate, Menu as MenuSchema
-from app.routers.users import get_current_user
+from app.api.v1.endpoints.users import get_current_user
 from app.models.users import User
 from app.services.menu_service import MenuService
 
