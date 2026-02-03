@@ -59,7 +59,8 @@ class UserService:
                 password_hash=security.get_password_hash(raw_password),
                 full_name=user_in.full_name,
                 role_id=role.role_id,
-                is_active=user_in.is_active,
+                is_active=False if user_in.role_name == 'student' else user_in.is_active,
+                must_change_password=True,
             )
             self.db.add(user)
             self.db.flush()  # Get user_id before adding related entities
@@ -97,10 +98,26 @@ class UserService:
             self.db.commit()
             self.db.refresh(user)
 
-            # 8. Send Email (REMOVED - Manual Trigger Only)
-            # background_tasks.add_task(email.send_new_account_email, user.email, raw_password, user.full_name)
+            # 8. Send Email (Enabled for single user creation)
+            background_tasks.add_task(email.send_new_account_email, user.email, raw_password, user.full_name)
 
-            # 9. REMOVED: Class enrollment via StudentEnrollment table
+            # 9. Course Enrollment
+            if user_in.role_name == 'student' and user_in.initial_course_id:
+                from app.models import coding as coding_models
+                # Validate course exists (could be done earlier but for transaction safety do it inside try block if lazy)
+                course = self.db.query(coding_models.Course).filter(coding_models.Course.course_id == user_in.initial_course_id).first()
+                if course:
+                     enrollment = coding_models.CourseEnrollment(
+                         course_id=course.course_id,
+                         student_id=user.user_id,
+                         status="active"
+                     )
+                     self.db.add(enrollment)
+                     self.db.commit() # Commit enrollment logic if needed separately, or it commits at end?
+                     # Commit was called at step 7. We should do this before step 7 or commit again.
+                     # Let's add before step 7 in future, but for now I'll just commit again
+                     self.db.commit()
+
             # Now handled by Student.class_id directly (set above)
 
             return user
@@ -252,7 +269,7 @@ class UserService:
                     password_hash=security.get_password_hash(raw_password),
                     full_name=student_data.full_name,
                     role_id=role.role_id,
-                    is_active=True,
+                    is_active=False,
                 )
                 self.db.add(user)
                 self.db.flush()
@@ -403,4 +420,22 @@ class UserService:
             }
             for user, student in results
         ]
+
+    def change_password(self, user: models.User, old_password: str, new_password: str) -> models.User:
+        """
+        Change user password.
+        """
+        # 1. Verify old password
+        if not security.verify_password(old_password, user.password_hash):
+            raise HTTPException(status_code=400, detail="Mật khẩu cũ không chính xác")
+
+        # 2. Update to new password
+        user.password_hash = security.get_password_hash(new_password)
+        user.must_change_password = False # Reset flag
+        
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        
+        return user
 

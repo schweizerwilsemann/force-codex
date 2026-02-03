@@ -24,7 +24,16 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password"
             )
         if not user.is_active:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+            # Special case: First login for students (active upon reset)
+            # If user is inactive BUT must_change_password is True, we allow them to proceed
+            # and activate the account.
+            if user.must_change_password:
+                user.is_active = True
+                self.db.add(user)
+                self.db.commit()
+                self.db.refresh(user)
+            else:
+                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
 
         # Generate Access Token
         access_token_expires = timedelta(minutes=config.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -49,7 +58,8 @@ class AuthService:
             "access_token": access_token,
             "refresh_token": refresh_token,
             "token_type": "bearer",
-            "role": user_role
+            "role": user_role,
+            "must_change_password": user.must_change_password or False
         }
 
     def refresh_token(self, refresh_token: str) -> dict:
