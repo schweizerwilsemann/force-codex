@@ -107,3 +107,18 @@ class SubmissionListItem(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class StudentAssignmentResult(BaseModel):
+    """Aggregated student result for an assignment (class view)."""
+    student_id: UUID
+    student_name: str
+    attempts: int
+    best_score: Optional[int] = None
+    adjusted_score: Optional[float] = None
+    last_submission: Optional[datetime] = None
+    has_late_submission: bool = False
+    late_status: Optional[str] = None  # 'ok', 'penalized', 'rejected', 'no_submission'
+
+    class Config:
+        from_attributes = True

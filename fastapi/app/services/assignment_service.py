@@ -160,3 +160,84 @@ class AssignmentService:
              raise HTTPException(status_code=403, detail="Không có quyền xem submissions")
         
         return self.repo.get_submissions(assignment_id)
+
+    def get_assignment_rankings(self, assignment_id: UUID, current_user: user_models.User) -> List[coding_schemas.StudentAssignmentResult]:
+        """Return aggregated student rankings for a given assignment.
+        Sorted by adjusted score (desc) then last submission time (desc).
+        Handles late submissions by applying late penalty or rejecting if not allowed.
+        """
+        if not current_user.role or current_user.role.role_name not in ['admin', 'lecturer']:
+            raise HTTPException(status_code=403, detail="Không có quyền xem bảng xếp hạng")
+
+        assignment = self.repo.get_assignment(assignment_id)
+        if not assignment:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bài tập")
+
+        # Get enrolled students for the course
+        enrollments = self.enrollment_repo.get_course_enrollments(assignment.course_id)
+        student_map = {e.student.student_id: e.student.user.full_name for e in enrollments}
+        student_ids = list(student_map.keys())
+
+        # Fetch all submissions for the assignment and group by student
+        all_subs = self.repo.get_submissions(assignment_id)
+        subs_by_student: dict = {}
+        for sub in all_subs:
+            sid = sub.student_id
+            if sid not in subs_by_student:
+                subs_by_student[sid] = []
+            subs_by_student[sid].append(sub)
+
+        results = []
+        for sid in student_ids:
+            name = student_map.get(sid, "Unknown")
+            subs = subs_by_student.get(sid, [])
+            if not subs:
+                results.append(coding_schemas.StudentAssignmentResult(
+                    student_id=sid,
+                    student_name=name,
+                    attempts=0,
+                    best_score=None,
+                    adjusted_score=None,
+                    last_submission=None,
+                    has_late_submission=False,
+                    late_status='no_submission'
+                ))
+                continue
+
+            attempts = len(subs)
+            # Find best submission (highest score, tie-breaker latest submitted_at)
+            best = max(subs, key=lambda x: (x.score or 0, x.submitted_at or x.created_at))
+            last_submitted_at = max((s.submitted_at or s.created_at) for s in subs)
+            has_late = any(getattr(s, 'is_late', False) for s in subs)
+
+            # Apply late policy
+            adjusted = float(best.score or 0)
+            late_status = 'ok'
+            if getattr(best, 'is_late', False):
+                if not assignment.allow_late_submission:
+                    adjusted = 0.0
+                    late_status = 'rejected'
+                else:
+                    penalty_pct = assignment.late_penalty_percent or 0
+                    adjusted = adjusted * (1.0 - (penalty_pct / 100.0))
+                    late_status = 'penalized' if penalty_pct else 'ok'
+
+            results.append(coding_schemas.StudentAssignmentResult(
+                student_id=sid,
+                student_name=name,
+                attempts=attempts,
+                best_score=best.score,
+                adjusted_score=round(adjusted, 2),
+                last_submission=last_submitted_at,
+                has_late_submission=has_late,
+                late_status=late_status
+            ))
+
+        # Sort: adjusted_score desc (None -> -inf), then last_submission desc (None -> earliest)
+        def sort_key(r: coding_schemas.StudentAssignmentResult):
+            adj = r.adjusted_score if r.adjusted_score is not None else -1.0
+            last = r.last_submission.timestamp() if r.last_submission else 0
+            return (adj, last)
+
+        results.sort(key=sort_key, reverse=True)
+        return results
