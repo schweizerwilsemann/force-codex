@@ -7,6 +7,7 @@ sys.path.append(os.getcwd())
 from app.db.database import SessionLocal, engine, Base
 from app.models import users as user_models
 from app.models import roles as role_models
+from app.models import coding as coding_models
 from app.core import security
 
 def seed_data():
@@ -125,9 +126,15 @@ def seed_menus(db):
         student_practice = Menu(title="Practice Problems", path="/student/practice", icon="Code", role_name="student", order_index=2)
         student_grades = Menu(title="Grades", path="/student/grades", icon="BarChart", role_name="student", order_index=3)
         student_profile = Menu(title="Profile", path="/student/profile", icon="User", role_name="student", order_index=4)
+        # Student courses template (uses placeholder {course_id})
+        student_courses = Menu(title="Học phần của tôi", path="/student/courses", icon="BookOpen", role_name="student", order_index=0)
 
-        db.add_all([student_exams, student_practice, student_grades, student_profile])
+        db.add_all([student_exams, student_practice, student_grades, student_profile, student_courses])
         db.flush()
+
+        # Submenus for Exams
+        db.add(Menu(title="Upcoming", path="/student/exams/upcoming", icon="Calendar", role_name="student", parent_id=student_exams.menu_id, order_index=1))
+        db.add(Menu(title="History", path="/student/exams/history", icon="History", role_name="student", parent_id=student_exams.menu_id, order_index=2))
 
         # Submenus for Exams
         db.add(Menu(title="Upcoming", path="/student/exams/upcoming", icon="Calendar", role_name="student", parent_id=student_exams.menu_id, order_index=1))
