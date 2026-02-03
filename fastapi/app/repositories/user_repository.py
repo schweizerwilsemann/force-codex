@@ -16,7 +16,11 @@ class UserRepository:
         return self.db.query(models.User).filter(models.User.email == email).first()
 
     def get_by_id(self, user_id: uuid.UUID) -> models.User | None:
-        return self.db.query(models.User).filter(models.User.user_id == user_id).first()
+        from sqlalchemy.orm import joinedload
+        return self.db.query(models.User).options(
+            joinedload(models.User.role),
+            joinedload(models.User.student_profile)
+        ).filter(models.User.user_id == user_id).first()
 
     def get_role_by_name(self, role_name: str) -> role_models.Role | None:
         return self.db.query(role_models.Role).filter(role_models.Role.role_name == role_name).first()

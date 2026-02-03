@@ -29,3 +29,8 @@ class SubmissionRepository:
         self.db.commit()
         self.db.refresh(db_submission)
         return db_submission
+
+    def get_by_problem(self, problem_id: UUID) -> List[models.Submission]:
+        return self.db.query(models.Submission).filter(
+            models.Submission.problem_id == problem_id
+        ).order_by(models.Submission.created_at.desc()).all()

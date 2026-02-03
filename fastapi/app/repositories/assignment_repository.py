@@ -14,22 +14,35 @@ class AssignmentRepository:
         ).filter(models.Assignment.assignment_id == assignment_id).first()
 
     def get_assignments(self, skip: int, limit: int, course_id: Optional[UUID] = None) -> List[models.Assignment]:
+        import logging
         query = self.db.query(models.Assignment).options(
             joinedload(models.Assignment.problem),
             joinedload(models.Assignment.course)
         )
         if course_id:
             query = query.filter(models.Assignment.course_id == course_id)
-            
-        return query.order_by(models.Assignment.due_date.desc().nullslast()).offset(skip).limit(limit).all()
+
+        result = query.order_by(models.Assignment.due_date.desc().nullslast()).offset(skip).limit(limit).all()
+        try:
+            import logging
+            logging.debug(f"get_assignments: found={len(result)} assignments for course_id={course_id}")
+        except Exception:
+            pass
+        return result
 
     def get_by_course_ids(self, course_ids: List[UUID]) -> List[models.Assignment]:
-         return self.db.query(models.Assignment).options(
+         query = self.db.query(models.Assignment).options(
             joinedload(models.Assignment.problem),
             joinedload(models.Assignment.course)
-        ).filter(
-            models.Assignment.course_id.in_(course_ids)
-        ).order_by(models.Assignment.due_date.asc().nullslast()).all()
+        ).filter(models.Assignment.course_id.in_(course_ids))
+
+         result = query.order_by(models.Assignment.due_date.asc().nullslast()).all()
+         try:
+             import logging
+             logging.debug(f"get_by_course_ids: course_ids={course_ids} found={len(result)}")
+         except Exception:
+             pass
+         return result
 
     def create(self, assignment_data: dict) -> models.Assignment:
         db_assignment = models.Assignment(**assignment_data)

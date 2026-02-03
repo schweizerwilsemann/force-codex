@@ -10,6 +10,11 @@ class ProblemRepository:
     def get_problems(self, skip: int, limit: int) -> List[models.Problem]:
         return self.db.query(models.Problem).offset(skip).limit(limit).all()
 
+    def get_problems_by_course_ids(self, course_ids: List[UUID], skip: int, limit: int) -> List[models.Problem]:
+        return self.db.query(models.Problem).filter(
+            models.Problem.course_id.in_(course_ids)
+        ).offset(skip).limit(limit).all()
+
     def get_problem(self, problem_id: UUID) -> Optional[models.Problem]:
         return self.db.query(models.Problem).filter(models.Problem.problem_id == problem_id).first()
 
