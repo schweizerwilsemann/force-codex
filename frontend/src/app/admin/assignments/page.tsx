@@ -30,12 +30,12 @@ export default function AdminAssignmentsPage() {
 
     const { data: courses } = useQuery({
         queryKey: ['courses'],
-        queryFn: courseService.getCourses
+        queryFn: () => courseService.getCourses()
     });
 
     const { data: problems } = useQuery({
         queryKey: ['problems'],
-        queryFn: codingService.getProblems
+        queryFn: () => codingService.getProblems()
     });
 
     const createMutation = useMutation({

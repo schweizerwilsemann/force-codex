@@ -37,7 +37,7 @@ export default function AdminProblemsPage() {
 
     const { data: problems, isLoading } = useQuery({
         queryKey: ['problems'],
-        queryFn: codingService.getProblems
+        queryFn: () => codingService.getProblems()
     });
 
     const { data: testCases, isLoading: isLoadingTestCases } = useQuery({

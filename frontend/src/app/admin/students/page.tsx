@@ -47,7 +47,9 @@ export default function AdminStudentsPage() {
         class_name: '',
         year_of_admission: new Date().getFullYear(),
         major: '',
-        initial_class_id: ''
+
+        initial_class_id: '',
+        initial_course_id: ''
     });
 
     const { data: students, isLoading } = useQuery({
@@ -57,12 +59,12 @@ export default function AdminStudentsPage() {
 
     const { data: courses } = useQuery({
         queryKey: ['courses'],
-        queryFn: courseService.getCourses
+        queryFn: () => courseService.getCourses()
     });
 
     const { data: classes } = useQuery({
         queryKey: ['classes'],
-        queryFn: classService.getClasses
+        queryFn: () => classService.getClasses()
     });
 
     const importMutation = useMutation({
@@ -83,6 +85,9 @@ export default function AdminStudentsPage() {
             if (!payload.initial_class_id) {
                 delete payload.initial_class_id;
             }
+            if (!payload.initial_course_id) {
+                delete payload.initial_course_id;
+            }
             // Admin can create student for any course/class
             return userService.createUser(payload);
         },
@@ -96,7 +101,9 @@ export default function AdminStudentsPage() {
                 class_name: '',
                 year_of_admission: new Date().getFullYear(),
                 major: '',
-                initial_class_id: ''
+
+                initial_class_id: '',
+                initial_course_id: ''
             });
         },
         onError: (error: any) => {
@@ -577,6 +584,22 @@ export default function AdminStudentsPage() {
                                         value={singleStudent.major}
                                         onChange={(e) => setSingleStudent({ ...singleStudent, major: e.target.value })}
                                     />
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label>Đăng ký vào học phần (Tùy chọn)</label>
+                                    <select
+                                        value={singleStudent.initial_course_id}
+                                        onChange={(e) => setSingleStudent({ ...singleStudent, initial_course_id: e.target.value })}
+                                        className={styles.selectInput}
+                                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                    >
+                                        <option value="">-- Không đăng ký --</option>
+                                        {courses?.map((c: Course) => (
+                                            <option key={c.course_id} value={c.course_id}>
+                                                {c.course_name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div className={styles.modalActions}>

@@ -25,7 +25,7 @@ export default function AdminCoursesPage() {
 
     const { data: courses, isLoading, isError, error } = useQuery({
         queryKey: ['courses'],
-        queryFn: courseService.getCourses,
+        queryFn: () => courseService.getCourses(),
         retry: false
     });
 

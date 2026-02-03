@@ -21,12 +21,12 @@ export default function AdminClassesPage() {
 
     const { data: classes, isLoading } = useQuery({
         queryKey: ['classes'],
-        queryFn: classService.getClasses
+        queryFn: () => classService.getClasses()
     });
 
     const { data: courses } = useQuery({
         queryKey: ['courses'],
-        queryFn: courseService.getCourses
+        queryFn: () => courseService.getCourses()
     });
 
     const { data: users } = useQuery({
