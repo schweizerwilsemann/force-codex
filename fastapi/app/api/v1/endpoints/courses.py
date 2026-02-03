@@ -24,6 +24,16 @@ def get_courses(
     return service.get_courses(skip, limit)
 
 
+@router.get("/my-courses", response_model=List[schemas.CourseWithStats])
+def get_my_courses(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_active_user)
+):
+    """Get enrolled courses for the current student"""
+    service = CourseService(db)
+    return service.get_student_courses(current_user)
+
+
 @router.get("/{course_id}", response_model=schemas.Course)
 def get_course(
     course_id: UUID,
@@ -64,6 +74,5 @@ def delete_course(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_active_user)
 ):
-    """Delete a course (admin/lecturer)"""
     service = CourseService(db)
     return service.delete_course(course_id, current_user)

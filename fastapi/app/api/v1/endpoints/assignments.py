@@ -92,3 +92,14 @@ def get_assignment_submissions(
     """Get all submissions for an assignment (admin/lecturer)"""
     service = AssignmentService(db)
     return service.get_assignment_submissions(assignment_id, current_user)
+
+
+@router.get("/{assignment_id}/rankings", response_model=List[coding_schemas.StudentAssignmentResult])
+def get_assignment_rankings(
+    assignment_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_active_user)
+):
+    """Get student rankings for an assignment (admin/lecturer). Sorted by adjusted score desc then submission time desc."""
+    service = AssignmentService(db)
+    return service.get_assignment_rankings(assignment_id, current_user)

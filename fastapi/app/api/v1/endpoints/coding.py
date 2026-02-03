@@ -14,9 +14,15 @@ router = APIRouter()
 # --- Problem Endpoints ---
 
 @router.get("/problems", response_model=List[schemas.ProblemList])
-def read_problems(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_problems(
+    skip: int = 0, 
+    limit: int = 100, 
+    course_id: UUID = None,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
     service = ProblemService(db)
-    return service.get_problems(skip, limit)
+    return service.get_problems(skip, limit, current_user, course_id)
 
 @router.get("/problems/{problem_id}", response_model=schemas.Problem)
 def read_problem(problem_id: UUID, db: Session = Depends(get_db)):
@@ -122,3 +128,13 @@ def read_problem_submissions(
     """Get current user's submissions for a specific problem"""
     service = SubmissionService(db)
     return service.get_problem_submissions(problem_id, current_user)
+
+@router.get("/problems/{problem_id}/rankings", response_model=List[schemas.StudentAssignmentResult])
+def read_problem_rankings(
+    problem_id: UUID,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get class rankings for a problem (admin/lecturer only)"""
+    service = ProblemService(db)
+    return service.get_problem_rankings(problem_id, current_user)

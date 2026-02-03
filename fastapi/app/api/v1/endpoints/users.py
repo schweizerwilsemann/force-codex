@@ -139,3 +139,25 @@ def get_students(
     """
     service = UserService(db)
     return service.get_students(class_id, course_id, skip, limit)
+
+@router.get("/me", response_model=schemas.User)
+def read_user_me(
+    current_user: models.User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Get current user profile.
+    """
+    return current_user
+
+@router.put("/me/password", response_model=Any)
+def update_password_me(
+    *,
+    db: Session = Depends(get_db),
+    password_in: schemas.PasswordChange,
+    current_user: models.User = Depends(get_current_active_user),
+) -> Any:
+    """
+    Update own password.
+    """
+    service = UserService(db)
+    return service.change_password(current_user, password_in.old_password, password_in.new_password)
