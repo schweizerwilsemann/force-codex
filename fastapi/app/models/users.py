@@ -14,6 +14,7 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.role_id"))
     is_active = Column(Boolean, default=True)
+    must_change_password = Column(Boolean, default=True)
     last_login = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
