@@ -108,6 +108,28 @@ class SubmissionListItem(BaseModel):
     class Config:
         from_attributes = True
 
+# --- Student Info Schemas ---
+class UserBasicInfo(BaseModel):
+    full_name: str
+    email: str
+    
+    class Config:
+        from_attributes = True
+
+class StudentBasicInfo(BaseModel):
+    student_id: UUID
+    student_code: str
+    user: UserBasicInfo
+    
+    class Config:
+        from_attributes = True
+
+class SubmissionWithStudent(SubmissionListItem):
+    student: StudentBasicInfo
+    
+    class Config:
+        from_attributes = True
+
 
 class StudentAssignmentResult(BaseModel):
     """Aggregated student result for an assignment (class view)."""
