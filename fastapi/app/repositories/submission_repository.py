@@ -31,6 +31,18 @@ class SubmissionRepository:
         return db_submission
 
     def get_by_problem(self, problem_id: UUID) -> List[models.Submission]:
-        return self.db.query(models.Submission).filter(
+        from app.models import users as user_models
+        # Get latest submission for each student using DISTINCT ON
+        submissions = self.db.query(models.Submission).options(
+            joinedload(models.Submission.student).joinedload(user_models.Student.user)
+        ).filter(
             models.Submission.problem_id == problem_id
-        ).order_by(models.Submission.created_at.desc()).all()
+        ).distinct(
+            models.Submission.student_id
+        ).order_by(
+            models.Submission.student_id, models.Submission.created_at.desc()
+        ).all()
+        
+        # Sort by created_at desc to show latest activities first
+        submissions.sort(key=lambda x: x.created_at, reverse=True)
+        return submissions

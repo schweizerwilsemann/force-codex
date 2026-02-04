@@ -28,9 +28,10 @@ class UserRepository:
     def list_users(self, skip: int = 0, limit: int = 100) -> list[models.User]:
         return self.db.query(models.User).offset(skip).limit(limit).all()
 
-    def get_students_by_filter(self, class_id: typing.Optional[uuid.UUID] = None, course_id: typing.Optional[uuid.UUID] = None, skip: int = 0, limit: int = 100):
+    def get_students_by_filter(self, class_id: typing.Optional[uuid.UUID] = None, course_id: typing.Optional[uuid.UUID] = None, search: str = None, skip: int = 0, limit: int = 100):
         # Local import to avoid circular dependency if models import repositories (though they shouldn't)
         from app.models import coding as coding_models
+        from sqlalchemy import or_
         
         query = self.db.query(
             models.User,
@@ -50,5 +51,15 @@ class UserRepository:
                 coding_models.CourseEnrollment.course_id == course_id,
                 coding_models.CourseEnrollment.status == "active"
             ).distinct()
+
+        if search:
+            search_query = f"%{search}%"
+            query = query.filter(
+                or_(
+                    models.Student.student_code.ilike(search_query),
+                    models.User.full_name.ilike(search_query),
+                    models.User.email.ilike(search_query)
+                )
+            )
 
         return query.offset(skip).limit(limit).all()

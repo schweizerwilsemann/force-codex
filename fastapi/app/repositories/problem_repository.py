@@ -55,3 +55,11 @@ class ProblemRepository:
     def delete_test_case(self, db_test_case: models.TestCase) -> None:
         self.db.delete(db_test_case)
         self.db.commit()
+
+    def update_test_case(self, db_test_case: models.TestCase, update_data: dict) -> models.TestCase:
+        for key, value in update_data.items():
+            if hasattr(db_test_case, key):
+                setattr(db_test_case, key, value)
+        self.db.commit()
+        self.db.refresh(db_test_case)
+        return db_test_case
