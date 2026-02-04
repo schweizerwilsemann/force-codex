@@ -129,6 +129,7 @@ async def send_activation_emails(
 def get_students(
     class_id: str = None,
     course_id: str = None,
+    search: str = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -138,7 +139,7 @@ def get_students(
     Get students, optionally filtered by class.
     """
     service = UserService(db)
-    return service.get_students(class_id, course_id, skip, limit)
+    return service.get_students(class_id, course_id, search, skip, limit)
 
 @router.get("/me", response_model=schemas.User)
 def read_user_me(

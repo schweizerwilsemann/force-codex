@@ -94,6 +94,17 @@ def delete_test_case(
     service = ProblemService(db)
     return service.delete_test_case(test_case_id, current_user)
 
+@router.put("/test-cases/{test_case_id}", response_model=schemas.TestCase)
+def update_test_case(
+    test_case_id: UUID,
+    test_case: schemas.TestCaseCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Update a test case"""
+    service = ProblemService(db)
+    return service.update_test_case(test_case_id, test_case, current_user)
+
 
 # --- Submission Endpoints ---
 
@@ -128,6 +139,16 @@ def read_problem_submissions(
     """Get current user's submissions for a specific problem"""
     service = SubmissionService(db)
     return service.get_problem_submissions(problem_id, current_user)
+
+@router.get("/problems/{problem_id}/all-submissions", response_model=List[schemas.SubmissionWithStudent])
+def read_all_problem_submissions(
+    problem_id: UUID,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Get all submissions for a problem (lecturer/admin view)"""
+    service = SubmissionService(db)
+    return service.get_all_problem_submissions(problem_id)
 
 @router.get("/problems/{problem_id}/rankings", response_model=List[schemas.StudentAssignmentResult])
 def read_problem_rankings(
