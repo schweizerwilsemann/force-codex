@@ -81,6 +81,7 @@ class TestCase(Base):
     order_index = Column(Integer, default=0)
 
     problem = relationship("Problem", back_populates="test_cases")
+    test_results = relationship("SubmissionTestResult", back_populates="test_case", cascade="all, delete-orphan")
 
 class Assignment(Base):
     __tablename__ = "assignments"
@@ -135,3 +136,4 @@ class SubmissionTestResult(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     submission = relationship("Submission", back_populates="test_results")
+    test_case = relationship("TestCase", back_populates="test_results")
