@@ -71,3 +71,6 @@ class SubmissionService:
 
     def get_problem_submissions(self, problem_id: UUID, current_user: user_models.User) -> List[models.Submission]:
         return self.repo.get_by_problem_and_student(problem_id, current_user.user_id)
+
+    def get_all_problem_submissions(self, problem_id: UUID) -> List[models.Submission]:
+        return self.repo.get_by_problem(problem_id)

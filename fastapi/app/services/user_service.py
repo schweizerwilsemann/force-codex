@@ -383,7 +383,7 @@ class UserService:
             "errors": errors
         }
 
-    def get_students(self, class_id: str = None, course_id: str = None, skip: int = 0, limit: int = 100) -> list[dict]:
+    def get_students(self, class_id: str = None, course_id: str = None, search: str = None, skip: int = 0, limit: int = 100) -> list[dict]:
         """Get students, optionally filtered by class or course enrollment."""
         from app.models import coding as coding_models
         from uuid import UUID
@@ -405,7 +405,7 @@ class UserService:
              course_uuid = None
         
         # Use Repository
-        results = self.repo.get_students_by_filter(class_uuid, course_uuid, skip, limit)
+        results = self.repo.get_students_by_filter(class_uuid, course_uuid, search, skip, limit)
 
         return [
             {

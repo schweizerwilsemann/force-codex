@@ -101,6 +101,17 @@ class ProblemService:
         self.repo.delete_test_case(test_case)
         return {"message": "Đã xóa test case"}
 
+    def update_test_case(self, test_case_id: UUID, test_case: schemas.TestCaseCreate, current_user: user_models.User) -> models.TestCase:
+        if current_user.role and current_user.role.role_name not in ['admin', 'lecturer']:
+             raise HTTPException(status_code=403, detail="Không có quyền sửa test case")
+        
+        db_test_case = self.repo.get_test_case(test_case_id)
+        if not db_test_case:
+             raise HTTPException(status_code=404, detail="Không tìm thấy test case")
+             
+        update_data = test_case.model_dump(exclude_unset=True)
+        return self.repo.update_test_case(db_test_case, update_data)
+
     def get_problem_rankings(self, problem_id: UUID, current_user: user_models.User) -> List[schemas.StudentAssignmentResult]:
         """Aggregate best submissions per student for a given problem and return rankings."""
         if not current_user.role or current_user.role.role_name not in ['admin', 'lecturer']:
