@@ -1,46 +1,60 @@
 .sidebar {
     width: 16rem;
-    /* 64 (w-64) */
     height: 100vh;
     position: fixed;
     left: 0;
     top: 0;
     background-color: #1f2937;
-    /* gray-800 */
     border-right: 1px solid #374151;
-    /* gray-700 */
     display: flex;
     flex-direction: column;
     z-index: 40;
+    overflow: hidden;
 }
 
 .header {
     padding: 1.5rem;
     border-bottom: 1px solid #374151;
-    /* gray-700 */
+    flex: 0 0 auto;
 
     .logo {
         color: #ffffff;
         font-size: 1.25rem;
-        /* xl */
         font-weight: 700;
     }
 
     .role {
         margin-top: 0.25rem;
         color: #9ca3af;
-        /* gray-400 */
         font-size: 0.75rem;
-        /* xs */
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
 }
 
 .nav {
-    flex: 1;
+    flex: 1 1 auto;
     padding: 1.5rem;
-    overflow-y: auto;
+    overflow-y: scroll;
+    overflow-x: hidden;
+
+    /* Custom scrollbar styles */
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: #4b5563;
+        border-radius: 3px;
+
+        &:hover {
+            background-color: #6b7280;
+        }
+    }
 }
 
 .sectionTitle {
@@ -66,7 +80,13 @@
 .menuItemWrapper {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0;
+}
+
+.menuItemRow {
+    display: flex;
+    align-items: center;
+    gap: 0;
 }
 
 .navItem {
@@ -83,6 +103,7 @@
     /* gray-300 */
     transition: all 0.2s;
     text-decoration: none;
+    flex: 1;
 
     &:hover {
         background-color: #374151;
@@ -106,6 +127,46 @@
     }
 }
 
+.menuToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 0.25rem;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+
+    &:hover {
+        background-color: #374151;
+        color: #ffffff;
+    }
+}
+
+.subMenuWrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 0;
+    overflow: hidden; // Ensures hidden content when collapsed
+
+    &.expanded {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        // margin-top: 0.25rem; // Moved to inner or kept here? Better here for spacing
+    }
+
+    &.collapsed {
+        grid-template-rows: 0fr;
+        opacity: 0;
+        margin-top: 0;
+    }
+}
+
 .subMenu {
     list-style: none;
     padding: 0;
@@ -116,6 +177,12 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    min-height: 0; // Crucial for grid transition
+
+    // Add top margin here if wrapper expanded? 
+    // Or just apply padding to wrapper?
+    // Let's rely on gap in parent or padding in subMenu
+    padding-top: 0.25rem; // Add a bit of spacing at the top always, it will be hidden when collapsed
 
     .navItem {
         font-size: 0.8rem;
@@ -127,7 +194,7 @@
 .footer {
     padding: 1rem;
     border-top: 1px solid #374151;
-    /* gray-700 */
+    flex: 0 0 auto;
 }
 
 .logoutBtn {

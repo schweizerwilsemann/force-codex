@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { authService, menuService } from '@/services/api';
 import styles from './Sidebar.module.scss';
 import * as LucideIcons from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 interface Menu {
     menu_id: number;
@@ -32,6 +33,33 @@ export default function Sidebar({ title, role }: SidebarProps) {
     const pathname = usePathname();
     const [menus, setMenus] = useState<Menu[]>([]);
     const [loading, setLoading] = useState(true);
+    const [expandedMenus, setExpandedMenus] = useState<Set<number>>(new Set());
+
+    // Check if a menu or any of its children contains the active path
+    const containsActivePath = useCallback((item: Menu): boolean => {
+        if (pathname === item.path || (item.path !== '#' && pathname.startsWith(item.path + '/'))) {
+            return true;
+        }
+        if (item.children && item.children.length > 0) {
+            return item.children.some(child => containsActivePath(child));
+        }
+        return false;
+    }, [pathname]);
+
+    // Auto-expand menus containing active route
+    useEffect(() => {
+        const expandedIds = new Set<number>();
+        const findAndExpand = (items: Menu[]) => {
+            items.forEach(item => {
+                if (item.children && item.children.length > 0 && containsActivePath(item)) {
+                    expandedIds.add(item.menu_id);
+                    findAndExpand(item.children);
+                }
+            });
+        };
+        findAndExpand(menus);
+        setExpandedMenus(expandedIds);
+    }, [menus, pathname, containsActivePath]);
 
     useEffect(() => {
         const fetchMenus = async () => {
@@ -51,6 +79,20 @@ export default function Sidebar({ title, role }: SidebarProps) {
         authService.logout();
     };
 
+    const toggleMenu = (menuId: number, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setExpandedMenus(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(menuId)) {
+                newSet.delete(menuId);
+            } else {
+                newSet.add(menuId);
+            }
+            return newSet;
+        });
+    };
+
     const renderMenuItem = (item: Menu) => {
         const isActive = pathname === item.path || (
             item.path !== '#' &&
@@ -59,20 +101,34 @@ export default function Sidebar({ title, role }: SidebarProps) {
             !['/admin', '/lecturer', '/student'].includes(item.path)
         );
         const hasChildren = item.children && item.children.length > 0;
+        const isExpanded = expandedMenus.has(item.menu_id);
 
         return (
             <li key={item.menu_id} className={styles.menuItemWrapper}>
-                <Link
-                    href={item.path || '#'}
-                    className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-                >
-                    {item.icon && <span className={styles.icon}><DynamicIcon name={item.icon} /></span>}
-                    <span className={styles.label}>{item.title}</span>
-                </Link>
+                <div className={styles.menuItemRow}>
+                    <Link
+                        href={item.path || '#'}
+                        className={`${styles.navItem} ${isActive ? styles.active : ''}`}
+                    >
+                        {item.icon && <span className={styles.icon}><DynamicIcon name={item.icon} /></span>}
+                        <span className={styles.label}>{item.title}</span>
+                    </Link>
+                    {hasChildren && (
+                        <button
+                            className={styles.menuToggle}
+                            onClick={(e) => toggleMenu(item.menu_id, e)}
+                            aria-label={isExpanded ? 'Thu gọn' : 'Mở rộng'}
+                        >
+                            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        </button>
+                    )}
+                </div>
                 {hasChildren && (
-                    <ul className={styles.subMenu}>
-                        {item.children.map(child => renderMenuItem(child))}
-                    </ul>
+                    <div className={`${styles.subMenuWrapper} ${isExpanded ? styles.expanded : styles.collapsed}`}>
+                        <ul className={styles.subMenu}>
+                            {item.children.map(child => renderMenuItem(child))}
+                        </ul>
+                    </div>
                 )}
             </li>
         );
