@@ -36,9 +36,9 @@ export default function AdminLayout({
     }
 
     return (
-        <div style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             <Sidebar title="Quản Trị Viên" role="Admin" />
-            <div style={{ flex: 1, marginLeft: '16rem', minHeight: '100vh', backgroundColor: '#111827' }}>
+            <div style={{ flex: 1, marginLeft: '16rem', minHeight: '100vh', backgroundColor: '#111827', overflowY: 'auto' }}>
                 {children}
             </div>
         </div>
