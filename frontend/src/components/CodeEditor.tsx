@@ -1,9 +1,10 @@
 'use client';
 
+import { useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import styles from './CodeEditor.module.scss';
 
-// Lazy load Monaco Editor to prevent Strict Mode issues
+// Lazy load Monaco Editor to prevent SSR issues
 const Editor = dynamic(
     () => import('@monaco-editor/react'),
     {
@@ -24,14 +25,23 @@ interface CodeEditorProps {
 }
 
 export default function CodeEditor({ code, language, onChange }: CodeEditorProps) {
+    const isMountedRef = useRef(true);
+
+    const handleChange = useCallback((value: string | undefined) => {
+        // Only propagate changes if component is still mounted
+        if (isMountedRef.current) {
+            onChange(value);
+        }
+    }, [onChange]);
+
     return (
         <Editor
             height="100%"
-            defaultLanguage="c"
             language={language === 'C++' ? 'cpp' : 'c'}
             theme="vs-dark"
             value={code}
-            onChange={onChange}
+            onChange={handleChange}
+            keepCurrentModel={true}
             options={{
                 minimap: { enabled: false },
                 fontSize: 14,
