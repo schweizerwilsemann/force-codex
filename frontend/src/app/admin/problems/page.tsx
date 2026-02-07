@@ -2,11 +2,12 @@
 
 import { useState, Fragment } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { codingService, Problem, TestCase } from '@/services/coding';
+import { codingService, Problem, TestCase, SubmissionWithStudent } from '@/services/coding';
 import styles from './problems.module.scss';
 import {
     Plus, Edit, Trash2, Search, ChevronDown, ChevronUp,
-    Code2, CheckCircle2, XCircle, Eye, Save, X
+    Code2, CheckCircle2, XCircle, Eye, Save, X, Upload, FileText,
+    ChevronLeft, ChevronRight, Users
 } from 'lucide-react';
 
 export default function AdminProblemsPage() {
@@ -15,6 +16,8 @@ export default function AdminProblemsPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
     const [showTestCases, setShowTestCases] = useState<string | null>(null);
+    const [viewingSubmissions, setViewingSubmissions] = useState<string | null>(null);
+    const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -35,6 +38,15 @@ export default function AdminProblemsPage() {
         points: 10
     });
 
+    // Bulk import state
+    const [showBulkImport, setShowBulkImport] = useState(false);
+    const [bulkImportText, setBulkImportText] = useState('');
+    const [editingTestCaseId, setEditingTestCaseId] = useState<string | null>(null);
+
+    // Pagination state
+    const [testPage, setTestPage] = useState(1);
+    const ITEMS_PER_PAGE = 5;
+
     const { data: problems, isLoading } = useQuery({
         queryKey: ['problems'],
         queryFn: () => codingService.getProblems()
@@ -44,6 +56,12 @@ export default function AdminProblemsPage() {
         queryKey: ['testCases', showTestCases],
         queryFn: () => codingService.getTestCases(showTestCases!),
         enabled: !!showTestCases
+    });
+
+    const { data: submissions, isLoading: isLoadingSubmissions } = useQuery({
+        queryKey: ['problemSubmissions', viewingSubmissions],
+        queryFn: () => codingService.getAllProblemSubmissions(viewingSubmissions!),
+        enabled: !!viewingSubmissions
     });
 
     const createMutation = useMutation({
@@ -82,6 +100,27 @@ export default function AdminProblemsPage() {
         mutationFn: (id: string) => codingService.deleteTestCase(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['testCases', showTestCases] });
+        }
+    });
+
+    const updateTestCaseMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => codingService.updateTestCase(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['testCases', showTestCases] });
+            setTestCaseForm({ input: '', expected_output: '', is_sample: false, points: 10 });
+            setEditingTestCaseId(null);
+            alert('Cập nhật test case thành công');
+        },
+        onError: (err: any) => alert(err.message)
+    });
+
+    const bulkCreateTestCasesMutation = useMutation({
+        mutationFn: ({ problemId, testCases }: { problemId: string; testCases: any[] }) =>
+            codingService.bulkCreateTestCases(problemId, testCases),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['testCases', showTestCases] });
+            setBulkImportText('');
+            setShowBulkImport(false);
         }
     });
 
@@ -136,7 +175,85 @@ export default function AdminProblemsPage() {
     const handleAddTestCase = (e: React.FormEvent) => {
         e.preventDefault();
         if (showTestCases) {
-            createTestCaseMutation.mutate({ problemId: showTestCases, data: testCaseForm });
+            if (editingTestCaseId) {
+                updateTestCaseMutation.mutate({ id: editingTestCaseId, data: testCaseForm });
+            } else {
+                createTestCaseMutation.mutate({ problemId: showTestCases, data: testCaseForm });
+            }
+        }
+    };
+
+    const handleEditTestCase = (tc: TestCase) => {
+        setEditingTestCaseId(tc.test_case_id);
+        setTestCaseForm({
+            input: tc.input,
+            expected_output: tc.expected_output,
+            is_sample: tc.is_sample,
+            points: tc.points
+        });
+        setShowBulkImport(false);
+    };
+
+    const handleCancelEditTestCase = () => {
+        setEditingTestCaseId(null);
+        setTestCaseForm({ input: '', expected_output: '', is_sample: false, points: 10 });
+    };
+
+    const parseBulkTestCases = (text: string) => {
+        const lines = text.trim().split('\n');
+        const testCases: any[] = [];
+
+        for (const line of lines) {
+            if (!line.trim()) continue;
+
+            // Format: input|||expected_output|||points (optional)
+            const parts = line.split('|||');
+            if (parts.length >= 2) {
+                testCases.push({
+                    input: parts[0].trim(),
+                    expected_output: parts[1].trim(),
+                    points: parts[2] ? parseInt(parts[2].trim()) || 10 : 10,
+                    is_sample: false
+                });
+            }
+        }
+        return testCases;
+    };
+
+    const handleBulkImport = () => {
+        if (!showTestCases || !bulkImportText.trim()) return;
+
+        const newTestCases = parseBulkTestCases(bulkImportText);
+        if (newTestCases.length === 0) {
+            alert('Không tìm thấy test case hợp lệ. Định dạng: input|||output|||points');
+            return;
+        }
+
+        // Check for duplicates
+        if (testCases) {
+            const existingInputs = new Set(testCases.map((tc: TestCase) => tc.input.trim()));
+            const uniqueTestCases = newTestCases.filter((tc: any) => !existingInputs.has(tc.input.trim()));
+
+            if (uniqueTestCases.length === 0) {
+                alert('Tất cả các test cases này đã tồn tại!');
+                return;
+            }
+
+            if (uniqueTestCases.length < newTestCases.length) {
+                const duplicatesCount = newTestCases.length - uniqueTestCases.length;
+                if (!confirm(`Phát hiện ${duplicatesCount} test cases trùng lặp. Bạn có muốn import ${uniqueTestCases.length} test cases còn lại không?`)) {
+                    return;
+                }
+                bulkCreateTestCasesMutation.mutate({ problemId: showTestCases, testCases: uniqueTestCases });
+            } else {
+                if (confirm(`Bạn sắp import ${uniqueTestCases.length} test cases. Tiếp tục?`)) {
+                    bulkCreateTestCasesMutation.mutate({ problemId: showTestCases, testCases: uniqueTestCases });
+                }
+            }
+        } else {
+            if (confirm(`Bạn sắp import ${newTestCases.length} test cases. Tiếp tục?`)) {
+                bulkCreateTestCasesMutation.mutate({ problemId: showTestCases, testCases: newTestCases });
+            }
         }
     };
 
@@ -162,9 +279,9 @@ export default function AdminProblemsPage() {
                     <div className={styles.titleSection}>
                         <h1>
                             <Code2 size={24} />
-                            Quản Lý Bài Tập
+                            Quản Lý Kho Bài Tập
                         </h1>
-                        <p>{problems?.length || 0} bài tập</p>
+                        <p>{problems?.length || 0} bài tập trong hệ thống</p>
                     </div>
                     <button className={styles.addBtn} onClick={openCreateModal}>
                         <Plus size={18} />
@@ -216,10 +333,23 @@ export default function AdminProblemsPage() {
                                             <td className={styles.actionsCell}>
                                                 <button
                                                     className={styles.iconBtn}
-                                                    onClick={() => setShowTestCases(showTestCases === problem.problem_id ? null : problem.problem_id)}
+                                                    onClick={() => {
+                                                        if (showTestCases !== problem.problem_id) setTestPage(1);
+                                                        setShowTestCases(showTestCases === problem.problem_id ? null : problem.problem_id);
+                                                    }}
                                                     title="Xem test cases"
                                                 >
                                                     {showTestCases === problem.problem_id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                </button>
+                                                <button
+                                                    className={styles.iconBtn}
+                                                    onClick={() => {
+                                                        setViewingSubmissions(problem.problem_id);
+                                                        setShowSubmissionsModal(true);
+                                                    }}
+                                                    title="Xem bài nộp"
+                                                >
+                                                    <Users size={16} />
                                                 </button>
                                                 <button
                                                     className={styles.iconBtn}
@@ -247,12 +377,20 @@ export default function AdminProblemsPage() {
                                                         ) : (
                                                             <>
                                                                 <div className={styles.testCasesList}>
-                                                                    {testCases?.map((tc: TestCase, idx: number) => (
+                                                                    {testCases?.slice((testPage - 1) * ITEMS_PER_PAGE, testPage * ITEMS_PER_PAGE).map((tc: TestCase, idx: number) => (
                                                                         <div key={tc.test_case_id} className={styles.testCaseItem}>
                                                                             <div className={styles.testCaseHeader}>
-                                                                                <span>Test {idx + 1}</span>
+                                                                                <span>Test {(testPage - 1) * ITEMS_PER_PAGE + idx + 1}</span>
                                                                                 {tc.is_sample && <span className={styles.sampleBadge}>Ví dụ</span>}
                                                                                 <span className={styles.points}>{tc.points} điểm</span>
+                                                                                <button
+                                                                                    className={styles.iconBtn}
+                                                                                    onClick={() => handleEditTestCase(tc)}
+                                                                                    style={{ marginRight: '0.5rem' }}
+                                                                                    title="Sửa"
+                                                                                >
+                                                                                    <Edit size={14} />
+                                                                                </button>
                                                                                 <button
                                                                                     className={styles.deleteBtn}
                                                                                     onClick={() => deleteTestCaseMutation.mutate(tc.test_case_id)}
@@ -272,48 +410,124 @@ export default function AdminProblemsPage() {
                                                                             </div>
                                                                         </div>
                                                                     ))}
+
+                                                                    {/* Pagination */}
+                                                                    {testCases && testCases.length > ITEMS_PER_PAGE && (
+                                                                        <div className={styles.pagination}>
+                                                                            <button
+                                                                                onClick={() => setTestPage(p => Math.max(1, p - 1))}
+                                                                                disabled={testPage === 1}
+                                                                            >
+                                                                                <ChevronLeft size={16} />
+                                                                            </button>
+                                                                            <span>Trang {testPage} / {Math.ceil(testCases.length / ITEMS_PER_PAGE)}</span>
+                                                                            <button
+                                                                                onClick={() => setTestPage(p => Math.min(Math.ceil(testCases.length / ITEMS_PER_PAGE), p + 1))}
+                                                                                disabled={testPage >= Math.ceil(testCases.length / ITEMS_PER_PAGE)}
+                                                                            >
+                                                                                <ChevronRight size={16} />
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                                 <form className={styles.addTestCaseForm} onSubmit={handleAddTestCase}>
-                                                                    <h5>Thêm Test Case Mới</h5>
-                                                                    <div className={styles.formRow}>
-                                                                        <div className={styles.formGroup}>
-                                                                            <label>Đầu vào</label>
-                                                                            <textarea
-                                                                                value={testCaseForm.input}
-                                                                                onChange={(e) => setTestCaseForm({ ...testCaseForm, input: e.target.value })}
-                                                                                required
-                                                                            />
-                                                                        </div>
-                                                                        <div className={styles.formGroup}>
-                                                                            <label>Đầu ra mong đợi</label>
-                                                                            <textarea
-                                                                                value={testCaseForm.expected_output}
-                                                                                onChange={(e) => setTestCaseForm({ ...testCaseForm, expected_output: e.target.value })}
-                                                                                required
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className={styles.formRow}>
-                                                                        <label className={styles.checkbox}>
-                                                                            <input
-                                                                                type="checkbox"
-                                                                                checked={testCaseForm.is_sample}
-                                                                                onChange={(e) => setTestCaseForm({ ...testCaseForm, is_sample: e.target.checked })}
-                                                                            />
-                                                                            Là ví dụ (hiển thị cho sinh viên)
-                                                                        </label>
-                                                                        <div className={styles.formGroup} style={{ width: '100px' }}>
-                                                                            <label>Điểm</label>
-                                                                            <input
-                                                                                type="number"
-                                                                                value={testCaseForm.points}
-                                                                                onChange={(e) => setTestCaseForm({ ...testCaseForm, points: parseInt(e.target.value) })}
-                                                                            />
-                                                                        </div>
-                                                                        <button type="submit" className={styles.addTestCaseBtn}>
-                                                                            <Plus size={16} /> Thêm
+                                                                    <div className={styles.testCaseFormHeader}>
+                                                                        <h5>{showBulkImport ? 'Import Nhiều Test Cases' : (editingTestCaseId ? 'Sửa Test Case' : 'Thêm Test Case Mới')}</h5>
+                                                                        <button
+                                                                            type="button"
+                                                                            className={styles.toggleBulkBtn}
+                                                                            onClick={() => setShowBulkImport(!showBulkImport)}
+                                                                        >
+                                                                            {showBulkImport ? (
+                                                                                <><FileText size={14} /> Thêm từng cái</>
+                                                                            ) : (
+                                                                                <><Upload size={14} /> Import hàng loạt</>
+                                                                            )}
                                                                         </button>
                                                                     </div>
+
+                                                                    {showBulkImport ? (
+                                                                        <div className={styles.bulkImportSection}>
+                                                                            <p className={styles.bulkHelp}>
+                                                                                Mỗi dòng một test case. Định dạng: <code>đầu_vào|||đầu_ra|||điểm</code>
+                                                                            </p>
+                                                                            <p className={styles.bulkExample}>
+                                                                                Ví dụ: <code>1 2|||3|||10</code>
+                                                                            </p>
+                                                                            <textarea
+                                                                                className={styles.bulkTextarea}
+                                                                                value={bulkImportText}
+                                                                                onChange={(e) => setBulkImportText(e.target.value)}
+                                                                                placeholder={`1 2|||3|||10\n5 7|||12|||10\n-3 8|||5|||10`}
+                                                                                rows={6}
+                                                                            />
+                                                                            <button
+                                                                                type="button"
+                                                                                className={styles.bulkImportBtn}
+                                                                                onClick={handleBulkImport}
+                                                                                disabled={bulkCreateTestCasesMutation.isPending}
+                                                                            >
+                                                                                {bulkCreateTestCasesMutation.isPending ? (
+                                                                                    'Đang import...'
+                                                                                ) : (
+                                                                                    <><Upload size={16} /> Import Test Cases</>
+                                                                                )}
+                                                                            </button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            <div className={styles.formRow}>
+                                                                                <div className={styles.formGroup}>
+                                                                                    <label>Đầu vào</label>
+                                                                                    <textarea
+                                                                                        value={testCaseForm.input}
+                                                                                        onChange={(e) => setTestCaseForm({ ...testCaseForm, input: e.target.value })}
+                                                                                        required
+                                                                                    />
+                                                                                </div>
+                                                                                <div className={styles.formGroup}>
+                                                                                    <label>Đầu ra mong đợi</label>
+                                                                                    <textarea
+                                                                                        value={testCaseForm.expected_output}
+                                                                                        onChange={(e) => setTestCaseForm({ ...testCaseForm, expected_output: e.target.value })}
+                                                                                        required
+                                                                                    />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className={styles.formRow}>
+                                                                                <label className={styles.checkbox}>
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        checked={testCaseForm.is_sample}
+                                                                                        onChange={(e) => setTestCaseForm({ ...testCaseForm, is_sample: e.target.checked })}
+                                                                                    />
+                                                                                    Là ví dụ (hiển thị cho sinh viên)
+                                                                                </label>
+                                                                                <div className={styles.formGroup} style={{ width: '100px' }}>
+                                                                                    <label>Điểm</label>
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={testCaseForm.points}
+                                                                                        onChange={(e) => setTestCaseForm({ ...testCaseForm, points: parseInt(e.target.value) })}
+                                                                                    />
+                                                                                </div>
+                                                                                {editingTestCaseId ? (
+                                                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                                                                                        <button type="button" className={styles.cancelBtn} onClick={handleCancelEditTestCase}>
+                                                                                            Hủy
+                                                                                        </button>
+                                                                                        <button type="submit" className={styles.addTestCaseBtn}>
+                                                                                            <Save size={16} /> Lưu
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <button type="submit" className={styles.addTestCaseBtn}>
+                                                                                        <Plus size={16} /> Thêm
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        </>
+                                                                    )}
                                                                 </form>
                                                             </>
                                                         )}
@@ -407,6 +621,57 @@ export default function AdminProblemsPage() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Submissions Modal */}
+                {showSubmissionsModal && (
+                    <div className={styles.modalOverlay}>
+                        <div className={`${styles.modal} ${styles.largeModal}`}>
+                            <div className={styles.modalHeader}>
+                                <h2>Danh Sách Nộp Bài</h2>
+                                <button onClick={() => setShowSubmissionsModal(false)}><X size={20} /></button>
+                            </div>
+                            <div className={styles.modalContent}>
+                                {isLoadingSubmissions ? (
+                                    <div className={styles.loading}>Đang tải...</div>
+                                ) : (
+                                    <table className={styles.table}>
+                                        <thead>
+                                            <tr>
+                                                <th>Sinh viên</th>
+                                                <th>MSSV</th>
+                                                <th>Trạng thái</th>
+                                                <th>Điểm</th>
+                                                <th>Thời gian</th>
+                                                <th>Nộp lúc</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {submissions?.map((sub: SubmissionWithStudent) => (
+                                                <tr key={sub.submission_id}>
+                                                    <td>{sub.student?.user?.full_name || 'N/A'}</td>
+                                                    <td>{sub.student?.student_code || 'N/A'}</td>
+                                                    <td>
+                                                        <span className={sub.status === 'accepted' ? styles.statusSuccess : sub.status === 'wrong_answer' ? styles.statusError : styles.statusPending}>
+                                                            {sub.status}
+                                                        </span>
+                                                    </td>
+                                                    <td>{sub.score}</td>
+                                                    <td>{sub.execution_time ? `${sub.execution_time}ms` : '-'}</td>
+                                                    <td>{new Date(sub.created_at).toLocaleString('vi-VN')}</td>
+                                                </tr>
+                                            ))}
+                                            {(!submissions || submissions.length === 0) && (
+                                                <tr>
+                                                    <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>Chưa có bài nộp nào</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
