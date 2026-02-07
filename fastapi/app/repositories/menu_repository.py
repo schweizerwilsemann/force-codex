@@ -26,3 +26,10 @@ class MenuRepository:
 
     def get_by_id(self, menu_id: int) -> Menu | None:
         return self.db.query(Menu).filter(Menu.menu_id == menu_id).first()
+
+    def get_all(self, role_name: Optional[str] = None) -> list[Menu]:
+        """Get all menus (flat list), optionally filtered by role."""
+        query = self.db.query(Menu)
+        if role_name:
+            query = query.filter(Menu.role_name == role_name.lower())
+        return query.order_by(asc(Menu.role_name), asc(Menu.order_index)).all()

@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from app.repositories.menu_repository import MenuRepository
 from app.models.users import User
 from app.models.menus import Menu
-from app.schemas.menus import MenuCreate
+from app.schemas.menus import MenuCreate, MenuUpdate
 
 
 class MenuService:
@@ -170,11 +170,11 @@ class MenuService:
         return menus
 
     def get_all_menus(self, user: User, role_filter: Optional[str] = None) -> list[Menu]:
-        """Get all menus. Admin only."""
+        """Get all menus (flat list). Admin only."""
         if user.role.role_name.lower() != "admin":
             raise HTTPException(status_code=403, detail="Not authorized")
         
-        return self.repo.get_all_roots(role_filter)
+        return self.repo.get_all(role_filter)
 
     def create_menu(self, user: User, menu_in: MenuCreate) -> Menu:
         """Create a new menu item. Admin only."""
@@ -206,6 +206,29 @@ class MenuService:
         try:
             self.db.delete(menu)
             self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+
+    def update_menu(self, user: User, menu_id: int, menu_in: MenuUpdate) -> Menu:
+        """Update a menu item. Admin only."""
+        if user.role.role_name.lower() != "admin":
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        menu = self.repo.get_by_id(menu_id)
+        if not menu:
+            raise HTTPException(status_code=404, detail="Menu not found")
+        
+        try:
+            update_data = menu_in.dict(exclude_unset=True)
+            for field, value in update_data.items():
+                setattr(menu, field, value)
+            self.db.commit()
+            self.db.refresh(menu)
+            return menu
+        except IntegrityError:
+            self.db.rollback()
+            raise HTTPException(status_code=400, detail="Database integrity error.")
         except Exception:
             self.db.rollback()
             raise

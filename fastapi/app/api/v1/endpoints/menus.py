@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.schemas.menus import MenuCreate, Menu as MenuSchema
+from app.schemas.menus import MenuCreate, MenuUpdate, Menu as MenuSchema
 from app.api.v1.endpoints.users import get_current_user
 from app.models.users import User
 from app.services.menu_service import MenuService
@@ -51,3 +51,15 @@ def delete_menu(
     service = MenuService(db)
     service.delete_menu(current_user, menu_id)
     return {"message": "Menu deleted"}
+
+@router.put("/{menu_id}", response_model=MenuSchema)
+def update_menu(
+    menu_id: int,
+    menu: MenuUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a menu item. Admin only."""
+    service = MenuService(db)
+    return service.update_menu(current_user, menu_id, menu)
+

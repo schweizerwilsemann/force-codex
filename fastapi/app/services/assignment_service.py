@@ -20,8 +20,24 @@ class AssignmentService:
         self.enrollment_repo = EnrollmentRepository(db)
 
     def _convert_to_stats_schema(self, assignment: models.Assignment) -> schemas.AssignmentWithStats:
-        submission_count = len(assignment.submissions) if assignment.submissions else 0
-        completed_count = sum(1 for s in (assignment.submissions or []) if s.status == 'accepted')
+        submissions = assignment.submissions or []
+        
+        # Count unique students who have submitted (not total submissions)
+        unique_students = set(s.student_id for s in submissions)
+        submission_count = len(unique_students)
+        
+        # Count students whose best score >= 80 as "completed"
+        # Group submissions by student and find best score for each
+        student_best_scores: dict = {}
+        for s in submissions:
+            sid = s.student_id
+            score = s.score or 0
+            if sid not in student_best_scores or score > student_best_scores[sid]:
+                student_best_scores[sid] = score
+        
+        # Completion threshold: 80 points
+        COMPLETION_THRESHOLD = 80
+        completed_count = sum(1 for score in student_best_scores.values() if score >= COMPLETION_THRESHOLD)
         
         return schemas.AssignmentWithStats(
             assignment_id=assignment.assignment_id,
@@ -79,11 +95,17 @@ class AssignmentService:
         
         assignments = self.repo.get_by_course_ids(course_ids)
         
+        COMPLETION_THRESHOLD = 80
         result = []
         for assignment in assignments:
             # Count this student's submissions for this assignment
             my_submissions = [s for s in (assignment.submissions or []) if s.student_id == current_user.user_id]
-            completed = any(s.status == 'accepted' for s in my_submissions)
+            
+            # Find best score among my submissions
+            best_score = max((s.score or 0 for s in my_submissions), default=0)
+            
+            # Completed if best score >= 80
+            completed = best_score >= COMPLETION_THRESHOLD
             
             result.append(schemas.AssignmentWithStats(
                 assignment_id=assignment.assignment_id,
@@ -206,8 +228,8 @@ class AssignmentService:
 
             attempts = len(subs)
             # Find best submission (highest score, tie-breaker latest submitted_at)
-            best = max(subs, key=lambda x: (x.score or 0, x.submitted_at or x.created_at))
-            last_submitted_at = max((s.submitted_at or s.created_at) for s in subs)
+            best = max(subs, key=lambda x: (x.score or 0, x.created_at))
+            last_submitted_at = max(s.created_at for s in subs)
             has_late = any(getattr(s, 'is_late', False) for s in subs)
 
             # Apply late policy
