@@ -58,12 +58,12 @@ export default function LecturerStudentsPage() {
 
     const { data: courses } = useQuery({
         queryKey: ['courses'],
-        queryFn: courseService.getCourses
+        queryFn: () => courseService.getCourses()
     });
 
     const { data: classes } = useQuery({
         queryKey: ['classes'],
-        queryFn: classService.getClasses
+        queryFn: () => classService.getClasses()
     });
 
 
