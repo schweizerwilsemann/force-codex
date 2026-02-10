@@ -34,9 +34,9 @@ export default function StudentLayout({
     }
 
     return (
-        <div style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             <Sidebar title="Khu Sinh Viên" role="Student" />
-            <div style={{ flex: 1, marginLeft: '16rem', minHeight: '100vh', backgroundColor: '#111827' }}>
+            <div style={{ flex: 1, marginLeft: '16rem', minHeight: '100vh', backgroundColor: '#111827', overflowY: 'auto' }}>
                 {children}
             </div>
         </div>
