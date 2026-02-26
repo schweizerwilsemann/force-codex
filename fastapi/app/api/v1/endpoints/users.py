@@ -150,7 +150,7 @@ def read_user_me(
     """
     return current_user
 
-@router.put("/me/password", response_model=Any)
+@router.put("/me/password", response_model=schemas.User)
 def update_password_me(
     *,
     db: Session = Depends(get_db),
