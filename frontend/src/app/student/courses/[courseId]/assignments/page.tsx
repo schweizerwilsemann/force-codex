@@ -114,7 +114,7 @@ export default function StudentCourseAssignmentsPage() {
                             const deadline = getDeadlineInfo(assignment.due_date);
                             const isCompleted = assignment.completed_count && assignment.completed_count > 0;
                             return (
-                                <Link key={assignment.assignment_id} href={`/student/problems/${assignment.problem_id}`} className={`${styles.assignmentCard} ${isCompleted ? styles.completed : ''}`}>
+                                <Link key={assignment.assignment_id} href={`/student/problems/${assignment.problem_id}?assignment_id=${assignment.assignment_id}`} className={`${styles.assignmentCard} ${isCompleted ? styles.completed : ''}`}>
                                     <div className={styles.cardLeft}>
                                         <div className={styles.statusIcon}>
                                             {isCompleted ? (

@@ -13,7 +13,7 @@ export default function StudentAssignmentsPage() {
 
     const { data: assignments, isLoading } = useQuery({
         queryKey: ['my-assignments'],
-        queryFn: assignmentService.getMyAssignments
+        queryFn: () => assignmentService.getMyAssignments()
     });
 
     const filteredAssignments = assignments?.filter((a: Assignment) => {
@@ -67,7 +67,7 @@ export default function StudentAssignmentsPage() {
                     <div className={styles.titleSection}>
                         <h1>
                             <BookOpen size={24} />
-                            Bài Tập Được Giao
+                            Bài Tập Về Nhà
                         </h1>
                         <p>Hoàn thành {stats.completed}/{stats.total} bài tập</p>
                     </div>
@@ -133,7 +133,7 @@ export default function StudentAssignmentsPage() {
                             return (
                                 <Link
                                     key={assignment.assignment_id}
-                                    href={`/student/problems/${assignment.problem_id}`}
+                                    href={`/student/problems/${assignment.problem_id}?assignment_id=${assignment.assignment_id}`}
                                     className={`${styles.assignmentCard} ${isCompleted ? styles.completed : ''}`}
                                 >
                                     <div className={styles.cardLeft}>

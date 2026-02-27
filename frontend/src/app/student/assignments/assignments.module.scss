@@ -13,6 +13,21 @@
     margin-bottom: 1.5rem;
 }
 
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #9ca3af; /* muted light gray for dark theme */
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 0.12s ease, transform 0.12s ease;
+}
+
+.backLink:hover {
+    color: #ffffff; /* brighter on hover */
+    transform: translateX(-2px);
+}
+
 .titleSection {
     h1 {
         display: flex;
