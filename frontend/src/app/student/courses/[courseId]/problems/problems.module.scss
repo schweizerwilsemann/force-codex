@@ -90,3 +90,30 @@
         background-color: #4338ca;
     }
 }
+
+.metaRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.metaIcons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.metaItem {
+    color: #9ca3af;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+}
+
+.iconText {
+    color: #9ca3af;
+    font-size: 13px;
+}

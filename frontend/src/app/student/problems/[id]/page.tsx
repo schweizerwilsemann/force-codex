@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { codingService } from '@/services/coding';
 import styles from './coding.module.scss';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import CodeEditor from '@/components/CodeEditor';
 import ResizablePanel from '@/components/ResizablePanel';
 import {
@@ -33,9 +33,11 @@ int main() {
 }`
 };
 
-export default function CodingPage() {
+function CodingPageContent() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const problemId = params.id as string;
+    const assignmentId = searchParams.get('assignment_id') || undefined;
     const [code, setCode] = useState('');
     const [language, setLanguage] = useState('C');
     const [submissionId, setSubmissionId] = useState<string | null>(null);
@@ -90,7 +92,8 @@ export default function CodingPage() {
         submitMutation.mutate({
             problem_id: problemId,
             language,
-            source_code: code
+            source_code: code,
+            assignment_id: assignmentId
         });
     };
 
@@ -133,8 +136,7 @@ export default function CodingPage() {
         };
     }, [submissionData, problem]);
 
-    // Left Panel Content (Problem Description)
-    const LeftPanelContent = () => (
+    const leftPanelContent = useMemo(() => (
         <div className={styles.problemPanel}>
             {/* Tabs */}
             <div className={styles.tabBar}>
@@ -296,10 +298,9 @@ export default function CodingPage() {
                 )}
             </div>
         </div>
-    );
+    ), [activeTab, isProblemLoading, problem, isHistoryLoading, submissionHistory, getStatusLabel, setSubmissionId]);
 
-    // Right Panel Content (Code Editor)
-    const RightPanelContent = () => (
+    const rightPanelContent = (
         <div className={styles.editorPanel}>
             {/* Editor Toolbar */}
             <div className={styles.toolbar}>
@@ -457,11 +458,19 @@ export default function CodingPage() {
 
     return (
         <ResizablePanel
-            leftPanel={<LeftPanelContent />}
-            rightPanel={<RightPanelContent />}
+            leftPanel={leftPanelContent}
+            rightPanel={rightPanelContent}
             initialLeftWidth={38}
             minLeftWidth={25}
             maxLeftWidth={55}
         />
+    );
+}
+
+export default function CodingPage() {
+    return (
+        <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f0f1a', color: '#fff' }}>Đang tải...</div>}>
+            <CodingPageContent />
+        </Suspense>
     );
 }

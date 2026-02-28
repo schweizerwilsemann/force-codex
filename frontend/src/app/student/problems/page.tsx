@@ -28,7 +28,7 @@ export default function ProblemsPage() {
 
     const { data: problems, isLoading, error } = useQuery({
         queryKey: ['problems'],
-        queryFn: codingService.getProblems
+        queryFn: () => codingService.getProblems()
     });
 
     const filteredProblems = useMemo(() => {
