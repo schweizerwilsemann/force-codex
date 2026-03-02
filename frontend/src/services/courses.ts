@@ -47,6 +47,17 @@ export interface EnrolledStudent {
     class_name?: string;
 }
 
+export interface StudentAssignmentResult {
+    student_id: string;
+    student_name: string;
+    attempts: number;
+    best_score?: number | null;
+    adjusted_score?: number | null;
+    last_submission?: string | null;
+    has_late_submission?: boolean;
+    late_status?: string | null;
+}
+
 // --- Course Service ---
 export const courseService = {
     async getCourses(): Promise<Course[]> {
@@ -58,6 +69,12 @@ export const courseService = {
     async getCourse(id: string): Promise<Course> {
         const response = await fetchWithAuth(`/courses/${id}`);
         if (!response.ok) throw new Error('Không thể tải Học phần');
+        return response.json();
+    },
+
+    async getMyCourses(): Promise<Course[]> {
+        const response = await fetchWithAuth('/courses/my-courses');
+        if (!response.ok) throw new Error('Không thể tải danh sách học phần của bạn');
         return response.json();
     },
 
@@ -211,6 +228,12 @@ export const assignmentService = {
         return response.json();
     },
 
+    async getAssignmentsByCourse(courseId: string): Promise<Assignment[]> {
+        const response = await fetchWithAuth(`/assignments/?course_id=${courseId}`);
+        if (!response.ok) throw new Error('Không thể tải danh sách bài tập của học phần');
+        return response.json();
+    },
+
     async getMyAssignments(): Promise<Assignment[]> {
         const response = await fetchWithAuth('/assignments/my-assignments');
         if (!response.ok) throw new Error('Không thể tải danh sách bài tập');
@@ -268,6 +291,12 @@ export const assignmentService = {
     async getSubmissions(assignmentId: string): Promise<any[]> {
         const response = await fetchWithAuth(`/assignments/${assignmentId}/submissions`);
         if (!response.ok) throw new Error('Không thể tải danh sách nộp bài');
+        return response.json();
+    },
+
+    async getAssignmentRankings(assignmentId: string): Promise<StudentAssignmentResult[]> {
+        const response = await fetchWithAuth(`/assignments/${assignmentId}/rankings`);
+        if (!response.ok) throw new Error('Không thể tải bảng xếp hạng');
         return response.json();
     }
 };

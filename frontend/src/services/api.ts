@@ -75,6 +75,11 @@ export const authService = {
         sessionStorage.setItem('token', data.access_token);
         sessionStorage.setItem('refresh_token', data.refresh_token);
         sessionStorage.setItem('role', data.role); // Store role
+        if (data.must_change_password) {
+            sessionStorage.setItem('must_change_password', 'true');
+        } else {
+            sessionStorage.removeItem('must_change_password');
+        }
         return data;
     },
 
@@ -124,10 +129,11 @@ export const userService = {
         return response.json();
     },
 
-    async getStudents(classId?: string, courseId?: string) {
+    async getStudents(classId?: string, courseId?: string, search?: string) {
         const params = new URLSearchParams();
         if (classId) params.append('class_id', classId);
         if (courseId) params.append('course_id', courseId);
+        if (search) params.append('search', search);
 
         const url = `/users/students?${params.toString()}`;
         const response = await fetchWithAuth(url);
@@ -142,6 +148,24 @@ export const userService = {
         });
         if (!response.ok) throw new Error('Failed to send emails');
         return response.json();
+    },
+
+    async getProfile() {
+        const response = await fetchWithAuth('/users/me');
+        if (!response.ok) throw new Error('Failed to fetch profile');
+        return response.json();
+    },
+
+    async changePassword(data: any) {
+        const response = await fetchWithAuth('/users/me/password', {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to change password');
+        }
+        return response.json();
     }
 };
 
@@ -149,6 +173,62 @@ export const menuService = {
     async getMyMenu() {
         const response = await fetchWithAuth('/menus/my-menu');
         if (!response.ok) throw new Error('Failed to fetch menu');
+        return response.json();
+    },
+
+    async getAllMenus(role?: string) {
+        const params = role ? `?role_name=${role}` : '';
+        const response = await fetchWithAuth(`/menus/${params}`);
+        if (!response.ok) throw new Error('Failed to fetch menus');
+        return response.json();
+    },
+
+    async createMenu(data: {
+        title: string;
+        path?: string;
+        icon?: string;
+        role_name: string;
+        parent_id?: number;
+        order_index?: number;
+    }) {
+        const response = await fetchWithAuth('/menus/', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to create menu');
+        }
+        return response.json();
+    },
+
+    async updateMenu(menuId: number, data: {
+        title?: string;
+        path?: string;
+        icon?: string;
+        role_name?: string;
+        parent_id?: number | null;
+        order_index?: number;
+    }) {
+        const response = await fetchWithAuth(`/menus/${menuId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update menu');
+        }
+        return response.json();
+    },
+
+    async deleteMenu(menuId: number) {
+        const response = await fetchWithAuth(`/menus/${menuId}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to delete menu');
+        }
         return response.json();
     }
 };

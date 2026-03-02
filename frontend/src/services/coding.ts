@@ -18,6 +18,7 @@ export interface Problem {
     memory_limit: number;
     allowed_languages: string[];
     sample_test_cases?: TestCase[];
+    course_id?: string;
 }
 
 export interface Submission {
@@ -36,6 +37,19 @@ export interface Submission {
     test_results?: any[];
 }
 
+export interface StudentBasicInfo {
+    student_id: string;
+    student_code: string;
+    user: {
+        full_name: string;
+        email: string;
+    };
+}
+
+export interface SubmissionWithStudent extends Submission {
+    student: StudentBasicInfo;
+}
+
 export interface SubmissionCreate {
     problem_id: string; // UUID
     language: string;
@@ -44,8 +58,9 @@ export interface SubmissionCreate {
 }
 
 export const codingService = {
-    async getProblems() {
-        const response = await fetchWithAuth('/coding/problems');
+    async getProblems(courseId?: string) {
+        const url = courseId ? `/coding/problems?course_id=${courseId}` : '/coding/problems';
+        const response = await fetchWithAuth(url);
         if (!response.ok) throw new Error('Failed to fetch problems');
         return response.json();
     },
@@ -83,6 +98,12 @@ export const codingService = {
     async getProblemSubmissions(problemId: string) {
         const response = await fetchWithAuth(`/coding/problems/${problemId}/submissions`);
         if (!response.ok) throw new Error('Không thể tải lịch sử nộp bài');
+        return response.json();
+    },
+
+    async getAllProblemSubmissions(problemId: string) {
+        const response = await fetchWithAuth(`/coding/problems/${problemId}/all-submissions`);
+        if (!response.ok) throw new Error('Không thể tải danh sách nộp bài');
         return response.json();
     },
 
@@ -150,5 +171,34 @@ export const codingService = {
             throw new Error(error.detail || 'Không thể xóa test case');
         }
         return response.json();
+    },
+
+    async updateTestCase(testCaseId: string, data: Omit<TestCase, 'test_case_id'>) {
+        const response = await fetchWithAuth(`/coding/test-cases/${testCaseId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Không thể cập nhật test case');
+        }
+        return response.json();
+    },
+
+    async bulkCreateTestCases(problemId: string, testCases: Omit<TestCase, 'test_case_id'>[]) {
+        // Create multiple test cases sequentially
+        const results = [];
+        for (const tc of testCases) {
+            const response = await fetchWithAuth(`/coding/problems/${problemId}/test-cases`, {
+                method: 'POST',
+                body: JSON.stringify(tc)
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || `Không thể tạo test case: ${tc.input.substring(0, 20)}...`);
+            }
+            results.push(await response.json());
+        }
+        return results;
     }
 };
