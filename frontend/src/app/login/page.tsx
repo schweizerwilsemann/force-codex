@@ -16,7 +16,7 @@ export default function LoginPage() {
         if (authService.isAuthenticated()) {
             const role = authService.getRole();
             if (role === 'student') {
-                router.push('/student/exams');
+                router.push('/student/courses');
             } else {
                 router.push('/admin/users');
             }
@@ -30,8 +30,16 @@ export default function LoginPage() {
 
         try {
             const data = await authService.login(email, password);
+            if (data.must_change_password) {
+                // Redirect to profile to change password
+                if (data.role === 'student') router.push('/student/profile');
+                else if (data.role === 'lecturer') router.push('/lecturer/profile'); // Assuming exists or will exist
+                else router.push('/admin/profile'); // Assuming exists
+                return;
+            }
+
             if (data.role === 'student') {
-                router.push('/student/exams');
+                router.push('/student/courses');
             } else if (data.role === 'lecturer') {
                 router.push('/lecturer'); // Dashboard
             } else {
