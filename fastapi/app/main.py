@@ -41,7 +41,7 @@ if settings.BACKEND_CORS_ORIGINS:
 elif True: # Fallback for development if not in settings yet
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://localhost:8000"],
+        allow_origins=["http://localhost:3000","http://localhost:8000", "http://[IP_ADDRESS]", "http://[IP_ADDRESS]"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
