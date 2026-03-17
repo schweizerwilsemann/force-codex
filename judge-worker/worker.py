@@ -14,10 +14,14 @@ import subprocess
 from pathlib import Path
 import signal
 import psutil
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
 
 # Config
 REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://null:1772313@localhost:5432/FORCECODEX')
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:1772313@localhost:5432/FORCECODEX')
 WORKER_CONCURRENCY = int(os.getenv('WORKER_CONCURRENCY', 2))
 
 # Initialize clients
