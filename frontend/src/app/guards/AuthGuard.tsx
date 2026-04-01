@@ -1,47 +1,64 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/services/api';
+
+const PUBLIC_ROUTES = ['/', '/login'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [authorized, setAuthorized] = useState(false);
+    const isPublic = PUBLIC_ROUTES.includes(pathname);
+
+    const [authorized, setAuthorized] = useState(isPublic);
+    const [checking, setChecking] = useState(!isPublic);
 
     useEffect(() => {
-        // Public routes that don't need auth
-        const publicRoutes = ['/login'];
-
-        // Check if current path is public
-        const isPublic = publicRoutes.includes(pathname);
+        let cancelled = false;
 
         if (isPublic) {
-            setAuthorized(true);
-            return;
+            startTransition(() => {
+                setAuthorized(true);
+                setChecking(false);
+            });
+            return () => {
+                cancelled = true;
+            };
         }
 
-        // Check authentication
-        if (authService.isAuthenticated()) {
-            const role = authService.getRole();
+        (async () => {
+            await authService.tryRestoreSession();
+            if (cancelled) return;
 
-            // RBAC: Prevent students from accessing admin routes
-            if (role === 'student' && pathname.startsWith('/admin')) {
-                router.push('/student/exams');
+            if (authService.isAuthenticated()) {
+                const role = authService.getRole();
+
+                if (role === 'student' && pathname.startsWith('/admin')) {
+                    router.push('/student/exams');
+                    setAuthorized(false);
+                    setChecking(false);
+                    return;
+                }
+
+                setAuthorized(true);
+            } else {
                 setAuthorized(false);
-                return;
+                router.push('/login');
             }
+            setChecking(false);
+        })();
 
-            setAuthorized(true);
-        } else {
-            setAuthorized(false);
-            router.push('/login');
-        }
-    }, [pathname, router]);
+        return () => {
+            cancelled = true;
+        };
+    }, [isPublic, pathname, router]);
 
-    // Show nothing while checking (or a loading spinner)
-    // to prevent flash of protected content
-    if (!authorized && !['/login'].includes(pathname)) {
+    if (checking && !isPublic) {
+        return null;
+    }
+
+    if (!authorized && !isPublic) {
         return null;
     }
 

@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { userService } from '@/services/api';
+import { authService, userService } from '@/services/api';
 import styles from './profile.module.scss';
-import { User, Lock, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function StudentProfilePage() {
     const [oldPassword, setOldPassword] = useState('');
@@ -24,9 +24,9 @@ export default function StudentProfilePage() {
             setOldPassword('');
             setNewPassword('');
             setConfirmPassword('');
-            sessionStorage.removeItem('must_change_password');
+            authService.clearMustChangePasswordFlag();
         },
-        onError: (error: any) => {
+        onError: (error) => {
             setMessage({ type: 'error', text: error.message });
         }
     });

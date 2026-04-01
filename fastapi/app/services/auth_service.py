@@ -91,15 +91,16 @@ class AuthService:
         if not user:
              raise HTTPException(status_code=401, detail="User not found")
              
-        # Generate New Access Token
+        # Generate New Access Token (include role for API authorization)
         access_token_expires = timedelta(minutes=config.settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        user_role = user.role.role_name if user.role else "student"
         access_token = security.create_access_token(
-            user.user_id, expires_delta=access_token_expires
+            user.user_id, role=user_role, expires_delta=access_token_expires
         )
         
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
             "token_type": "bearer",
-            "role": user.role.role_name if user.role else "student"
+            "role": user_role,
         }

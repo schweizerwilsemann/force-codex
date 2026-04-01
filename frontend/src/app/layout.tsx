@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ForceCodeX",
-  description: "Based on Next.js",
+  title: "ForceCodeX — Nền tảng học lập trình",
+  description:
+    "Học tập, bài tập code và chấm tự động cho sinh viên, giảng viên và quản trị.",
 };
 
 import { Suspense } from "react";

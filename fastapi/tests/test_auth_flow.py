@@ -1,4 +1,5 @@
 import unittest
+import time
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -15,6 +16,7 @@ from app.core import security
 from app.models import users as user_models
 from app.models import roles as role_models
 from app.models import tokens as token_models
+from app.models import coding as coding_models
 
 class TestAuthFlow(unittest.TestCase):
     @classmethod
@@ -28,7 +30,21 @@ class TestAuthFlow(unittest.TestCase):
         )
         cls.TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=cls.engine)
 
-        Base.metadata.create_all(bind=cls.engine)
+        # SQLite cannot compile PostgreSQL ARRAY columns on other models; only
+        # create tables this suite needs (importing app.main registers all models on Base).
+        # User CRUD touches student_profile (students) and optional class; omit full schema (ARRAY, etc.).
+        Base.metadata.create_all(
+            bind=cls.engine,
+            tables=[
+                role_models.Role.__table__,
+                user_models.User.__table__,
+                user_models.Lecturer.__table__,
+                coding_models.Class.__table__,
+                user_models.Student.__table__,
+                user_models.InitialPassword.__table__,
+                token_models.RefreshToken.__table__,
+            ],
+        )
         
         # Override get_db
         def override_get_db():
@@ -107,6 +123,9 @@ class TestAuthFlow(unittest.TestCase):
         data = login_response.json()
         self.assertIn("refresh_token", data)
         refresh_token = data["refresh_token"]
+
+        # JWT exp is second-resolution; same-second refresh can yield an identical token string.
+        time.sleep(1)
 
         # Use refresh token
         response = self.client.post(

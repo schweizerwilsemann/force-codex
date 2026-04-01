@@ -1,51 +1,129 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
-export async function fetchWithAuth(url: string, options: RequestInit = {}) {
-    let token = sessionStorage.getItem('token');
+const KEY_ACCESS = 'token';
+const KEY_REFRESH = 'refresh_token';
+const KEY_ROLE = 'role';
+const KEY_MUST_CHANGE = 'must_change_password';
 
-    // Helper to construct headers
+function isBrowser(): boolean {
+    return typeof window !== 'undefined';
+}
+
+/** Move refresh token / role from sessionStorage (old behavior) into localStorage. */
+function migrateLegacyAuthFromSessionStorage(): void {
+    if (!isBrowser()) return;
+    const rt = sessionStorage.getItem(KEY_REFRESH);
+    if (rt && !localStorage.getItem(KEY_REFRESH)) {
+        localStorage.setItem(KEY_REFRESH, rt);
+        sessionStorage.removeItem(KEY_REFRESH);
+    }
+    const role = sessionStorage.getItem(KEY_ROLE);
+    if (role && !localStorage.getItem(KEY_ROLE)) {
+        localStorage.setItem(KEY_ROLE, role);
+        sessionStorage.removeItem(KEY_ROLE);
+    }
+    const must = sessionStorage.getItem(KEY_MUST_CHANGE);
+    if (must && !localStorage.getItem(KEY_MUST_CHANGE)) {
+        localStorage.setItem(KEY_MUST_CHANGE, must);
+        sessionStorage.removeItem(KEY_MUST_CHANGE);
+    }
+}
+
+function getAccessToken(): string | null {
+    if (!isBrowser()) return null;
+    migrateLegacyAuthFromSessionStorage();
+    return sessionStorage.getItem(KEY_ACCESS);
+}
+
+function getRefreshToken(): string | null {
+    if (!isBrowser()) return null;
+    migrateLegacyAuthFromSessionStorage();
+    return localStorage.getItem(KEY_REFRESH);
+}
+
+function applyRefreshPayload(data: {
+    access_token: string;
+    refresh_token?: string;
+    role?: string;
+}): void {
+    if (!isBrowser()) return;
+    sessionStorage.setItem(KEY_ACCESS, data.access_token);
+    if (data.refresh_token) {
+        localStorage.setItem(KEY_REFRESH, data.refresh_token);
+    }
+    if (data.role) {
+        localStorage.setItem(KEY_ROLE, data.role);
+    }
+}
+
+function clearAuthStorage(): void {
+    if (!isBrowser()) return;
+    sessionStorage.removeItem(KEY_ACCESS);
+    sessionStorage.removeItem(KEY_REFRESH);
+    sessionStorage.removeItem(KEY_ROLE);
+    sessionStorage.removeItem(KEY_MUST_CHANGE);
+    localStorage.removeItem(KEY_REFRESH);
+    localStorage.removeItem(KEY_ROLE);
+    localStorage.removeItem(KEY_MUST_CHANGE);
+}
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function performRefreshAccessToken(): Promise<boolean> {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return false;
+    try {
+        const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (!refreshResponse.ok) {
+            if (refreshResponse.status === 401) {
+                clearAuthStorage();
+            }
+            return false;
+        }
+        const data = await refreshResponse.json();
+        applyRefreshPayload(data);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function refreshAccessToken(): Promise<boolean> {
+    if (refreshInFlight) return refreshInFlight;
+    const p = performRefreshAccessToken().finally(() => {
+        refreshInFlight = null;
+    });
+    refreshInFlight = p;
+    return p;
+}
+
+export async function fetchWithAuth(url: string, options: RequestInit = {}) {
+    let token = getAccessToken();
+
     const getHeaders = (t: string | null) => ({
         'Content-Type': 'application/json',
         ...(t ? { Authorization: `Bearer ${t}` } : {}),
         ...options.headers,
     });
 
-    let response = await fetch(`${API_URL}${url}`, {
+    const response = await fetch(`${API_URL}${url}`, {
         ...options,
         headers: getHeaders(token),
     });
 
     if (response.status === 401) {
-        const refreshToken = sessionStorage.getItem('refresh_token');
-        if (refreshToken) {
-            try {
-                // Try to refresh
-                const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ refresh_token: refreshToken })
-                });
-
-                if (refreshResponse.ok) {
-                    const data = await refreshResponse.json();
-                    sessionStorage.setItem('token', data.access_token);
-                    // If backend rotates refresh token, update it here too
-                    if (data.refresh_token) {
-                        sessionStorage.setItem('refresh_token', data.refresh_token);
-                    }
-
-                    // Retry original request
-                    return fetch(`${API_URL}${url}`, {
-                        ...options,
-                        headers: getHeaders(data.access_token),
-                    });
-                }
-            } catch (error) {
-                console.error("Refresh token failed", error);
-            }
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            token = getAccessToken();
+            return fetch(`${API_URL}${url}`, {
+                ...options,
+                headers: getHeaders(token),
+            });
         }
-
-        // If we get here, refresh failed or no refresh token
         authService.logout();
     }
 
@@ -53,6 +131,17 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 }
 
 export const authService = {
+    /**
+     * If this tab has no access token but a refresh token exists (e.g. new tab),
+     * exchange it for an access token. Call from guards before isAuthenticated().
+     */
+    async tryRestoreSession(): Promise<boolean> {
+        if (!isBrowser()) return false;
+        migrateLegacyAuthFromSessionStorage();
+        if (getAccessToken()) return true;
+        return refreshAccessToken();
+    },
+
     async login(email: string, password: string) {
         const formData = new URLSearchParams();
         formData.append('username', email);
@@ -72,30 +161,41 @@ export const authService = {
         }
 
         const data = await response.json();
-        sessionStorage.setItem('token', data.access_token);
-        sessionStorage.setItem('refresh_token', data.refresh_token);
-        sessionStorage.setItem('role', data.role); // Store role
+        if (!isBrowser()) return data;
+        migrateLegacyAuthFromSessionStorage();
+        sessionStorage.setItem(KEY_ACCESS, data.access_token);
+        localStorage.setItem(KEY_REFRESH, data.refresh_token);
+        localStorage.setItem(KEY_ROLE, data.role);
         if (data.must_change_password) {
-            sessionStorage.setItem('must_change_password', 'true');
+            localStorage.setItem(KEY_MUST_CHANGE, 'true');
         } else {
-            sessionStorage.removeItem('must_change_password');
+            localStorage.removeItem(KEY_MUST_CHANGE);
         }
         return data;
     },
 
     logout() {
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        clearAuthStorage();
+        if (isBrowser()) {
+            window.location.href = '/login';
+        }
     },
 
     isAuthenticated() {
-        return !!sessionStorage.getItem('token');
+        return !!getAccessToken();
     },
 
     getRole() {
-        return sessionStorage.getItem('role');
-    }
+        if (!isBrowser()) return null;
+        migrateLegacyAuthFromSessionStorage();
+        return localStorage.getItem(KEY_ROLE) ?? sessionStorage.getItem(KEY_ROLE);
+    },
+
+    clearMustChangePasswordFlag() {
+        if (!isBrowser()) return;
+        localStorage.removeItem(KEY_MUST_CHANGE);
+        sessionStorage.removeItem(KEY_MUST_CHANGE);
+    },
 };
 
 export const userService = {

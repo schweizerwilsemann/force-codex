@@ -14,19 +14,28 @@ export default function LecturerLayout({
     const [authorized, setAuthorized] = useState(false);
 
     useEffect(() => {
-        if (!authService.isAuthenticated()) {
-            router.push('/login');
-            return;
-        }
+        let cancelled = false;
+        (async () => {
+            await authService.tryRestoreSession();
+            if (cancelled) return;
 
-        const role = authService.getRole();
-        if (role !== 'lecturer') {
-            if (role === 'admin') router.push('/admin');
-            else if (role === 'student') router.push('/student/exams');
-            else router.push('/login');
-        } else {
-            setAuthorized(true);
-        }
+            if (!authService.isAuthenticated()) {
+                router.push('/login');
+                return;
+            }
+
+            const role = authService.getRole();
+            if (role !== 'lecturer') {
+                if (role === 'admin') router.push('/admin');
+                else if (role === 'student') router.push('/student/exams');
+                else router.push('/login');
+            } else {
+                setAuthorized(true);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
     }, [router]);
 
     if (!authorized) {

@@ -13,14 +13,24 @@ export default function LoginPage() {
     const router = useRouter();
 
     useEffect(() => {
-        if (authService.isAuthenticated()) {
-            const role = authService.getRole();
-            if (role === 'student') {
-                router.push('/student/courses');
-            } else {
-                router.push('/admin/users');
+        let cancelled = false;
+        (async () => {
+            await authService.tryRestoreSession();
+            if (cancelled) return;
+            if (authService.isAuthenticated()) {
+                const role = authService.getRole();
+                if (role === 'student') {
+                    router.push('/student/courses');
+                } else if (role === 'lecturer') {
+                    router.push('/lecturer');
+                } else {
+                    router.push('/admin/users');
+                }
             }
-        }
+        })();
+        return () => {
+            cancelled = true;
+        };
     }, [router]);
 
     const handleSubmit = async (e: React.FormEvent) => {

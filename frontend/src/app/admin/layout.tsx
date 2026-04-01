@@ -14,21 +14,28 @@ export default function AdminLayout({
     const [authorized, setAuthorized] = useState(false);
 
     useEffect(() => {
-        // Simple client-side route protection
-        if (!authService.isAuthenticated()) {
-            router.push('/login');
-            return;
-        }
+        let cancelled = false;
+        (async () => {
+            await authService.tryRestoreSession();
+            if (cancelled) return;
 
-        const role = authService.getRole();
-        if (role !== 'admin') {
-            // Redirect to appropriate dashboard based on actual role
-            if (role === 'lecturer') router.push('/lecturer');
-            else if (role === 'student') router.push('/student/exams');
-            else router.push('/login');
-        } else {
-            setAuthorized(true);
-        }
+            if (!authService.isAuthenticated()) {
+                router.push('/login');
+                return;
+            }
+
+            const role = authService.getRole();
+            if (role !== 'admin') {
+                if (role === 'lecturer') router.push('/lecturer');
+                else if (role === 'student') router.push('/student/exams');
+                else router.push('/login');
+            } else {
+                setAuthorized(true);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
     }, [router]);
 
     if (!authorized) {
