@@ -4,12 +4,14 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 
 from app.repositories.course_repository import CourseRepository
+from app.services.menu_service import MenuService
 from app.schemas import courses as schemas
 from app.models import coding as models
 from app.models import users as user_models
 
 class CourseService:
     def __init__(self, db: Session):
+        self.db = db
         self.repo = CourseRepository(db)
 
     def get_courses(self, skip: int = 0, limit: int = 100) -> List[schemas.CourseWithStats]:
@@ -54,14 +56,34 @@ class CourseService:
             raise HTTPException(status_code=404, detail="Không tìm thấy Học phần")
         return course
 
+    def get_course_with_stats(self, course_id: UUID) -> schemas.CourseWithStats:
+        course = self.get_course(course_id)
+        return schemas.CourseWithStats(
+            course_id=course.course_id,
+            course_code=course.course_code,
+            course_name=course.course_name,
+            category=course.category,
+            programming_languages=course.programming_languages or [],
+            problem_count=len(course.problems) if course.problems else 0,
+            enrollment_count=len(course.enrollments) if course.enrollments else 0,
+        )
+
     def create_course(self, course_in: schemas.CourseCreate, current_user: user_models.User) -> models.Course:
         if not current_user.role or current_user.role.role_name not in ['admin', 'lecturer']:
             raise HTTPException(status_code=403, detail="Chỉ admin hoặc giảng viên mới có thể tạo Học phần")
         
         if self.repo.get_by_code(course_in.course_code):
              raise HTTPException(status_code=400, detail="Mã Học phần đã tồn tại")
-        
-        return self.repo.create(course_in.model_dump())
+
+        course = self.repo.create(course_in.model_dump(), commit=False)
+        try:
+            MenuService(self.db).create_menus_for_new_course(course, commit=False)
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        self.db.refresh(course)
+        return course
 
     def update_course(self, course_id: UUID, course_in: schemas.CourseUpdate, current_user: user_models.User) -> models.Course:
         if not current_user.role or current_user.role.role_name not in ['admin', 'lecturer']:
@@ -69,7 +91,12 @@ class CourseService:
 
         db_course = self.get_course(course_id)
         update_data = course_in.model_dump(exclude_unset=True)
-        return self.repo.update(db_course, update_data)
+        updated = self.repo.update(db_course, update_data)
+        if "course_name" in update_data:
+            MenuService(self.db).sync_course_menu_titles(
+                updated.course_id, updated.course_name, commit=True
+            )
+        return updated
 
     def delete_course(self, course_id: UUID, current_user: user_models.User) -> dict:
         if not current_user.role or current_user.role.role_name not in ['admin', 'lecturer']:
@@ -80,5 +107,6 @@ class CourseService:
         if db_course.enrollments or db_course.problems or db_course.assignments:
              raise HTTPException(status_code=400, detail="Không thể xóa Học phần đã có dữ liệu (sinh viên/bài tập/phân công)")
 
+        MenuService(self.db).hard_delete_menus_for_course(course_id, commit=False)
         self.repo.delete(db_course)
         return {"message": "Đã xóa Học phần thành công"}

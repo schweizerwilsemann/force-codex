@@ -16,10 +16,13 @@ class CourseRepository:
     def get_multi(self, skip: int = 0, limit: int = 100) -> List[models.Course]:
         return self.db.query(models.Course).offset(skip).limit(limit).all()
 
-    def create(self, course_data: dict) -> models.Course:
+    def create(self, course_data: dict, *, commit: bool = True) -> models.Course:
         db_course = models.Course(**course_data)
         self.db.add(db_course)
-        self.db.commit()
+        if commit:
+            self.db.commit()
+        else:
+            self.db.flush()
         self.db.refresh(db_course)
         return db_course
 

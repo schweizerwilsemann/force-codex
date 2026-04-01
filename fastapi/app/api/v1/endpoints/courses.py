@@ -34,15 +34,15 @@ def get_my_courses(
     return service.get_student_courses(current_user)
 
 
-@router.get("/{course_id}", response_model=schemas.Course)
+@router.get("/{course_id}", response_model=schemas.CourseWithStats)
 def get_course(
     course_id: UUID,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_active_user)
 ):
-    """Get a specific course"""
+    """Get a specific course including problem and enrollment counts."""
     service = CourseService(db)
-    return service.get_course(course_id)
+    return service.get_course_with_stats(course_id)
 
 
 @router.post("/", response_model=schemas.Course)

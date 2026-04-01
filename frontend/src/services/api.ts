@@ -276,10 +276,25 @@ export const menuService = {
         return response.json();
     },
 
-    async getAllMenus(role?: string) {
-        const params = role ? `?role_name=${role}` : '';
-        const response = await fetchWithAuth(`/menus/${params}`);
+    async getAllMenus(role?: string, includeDeleted: boolean = false) {
+        const params = new URLSearchParams();
+        if (role) params.append('role_name', role);
+        if (includeDeleted) params.append('include_deleted', 'true');
+        
+        const url = `/menus/?${params.toString()}`;
+        const response = await fetchWithAuth(url);
         if (!response.ok) throw new Error('Failed to fetch menus');
+        return response.json();
+    },
+
+    async restoreMenu(menuId: number) {
+        const response = await fetchWithAuth(`/menus/${menuId}/restore`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to restore menu');
+        }
         return response.json();
     },
 

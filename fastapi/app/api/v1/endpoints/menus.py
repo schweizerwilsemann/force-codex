@@ -24,12 +24,24 @@ def get_my_menu(
 @router.get("/", response_model=List[MenuSchema])
 def get_all_menus(
     role_name: Optional[str] = None,
+    include_deleted: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get all menus, optionally filtered by role. Admin only."""
     service = MenuService(db)
-    return service.get_all_menus(current_user, role_name)
+    return service.get_all_menus(current_user, role_name, include_deleted)
+
+@router.post("/{menu_id}/restore")
+def restore_menu(
+    menu_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Restore a deleted menu item. Admin only."""
+    service = MenuService(db)
+    service.restore_menu(current_user, menu_id)
+    return {"message": "Menu restored"}
 
 @router.post("/", response_model=MenuSchema)
 def create_menu(

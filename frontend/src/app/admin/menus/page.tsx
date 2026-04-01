@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { menuService } from '@/services/api';
 import styles from './menus.module.scss';
-import { Pencil, Trash2, Plus, X } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, RotateCcw } from 'lucide-react';
 
 interface Menu {
     menu_id: number;
@@ -13,6 +13,7 @@ interface Menu {
     role_name: string;
     parent_id: number | null;
     order_index: number;
+    is_deleted: boolean;
     children: Menu[];
 }
 
@@ -21,6 +22,7 @@ export default function MenusPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
+    const [includeDeleted, setIncludeDeleted] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
@@ -37,12 +39,12 @@ export default function MenusPage() {
 
     useEffect(() => {
         fetchMenus();
-    }, [roleFilter]);
+    }, [roleFilter, includeDeleted]);
 
     const fetchMenus = async () => {
         try {
             setLoading(true);
-            const data = await menuService.getAllMenus(roleFilter || undefined);
+            const data = await menuService.getAllMenus(roleFilter || undefined, includeDeleted);
             setMenus(data);
         } catch (err: any) {
             setError(err.message);
@@ -109,10 +111,20 @@ export default function MenusPage() {
         }
     };
 
+    const handleRestore = async (menuId: number) => {
+        try {
+            await menuService.restoreMenu(menuId);
+            fetchMenus();
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
     const getParentOptions = () => {
         // Get all possible parent menus (excluding current menu if editing)
         return menus.filter(m =>
             m.parent_id === null &&
+            !m.is_deleted &&
             (!editingMenu || m.menu_id !== editingMenu.menu_id)
         );
     };
@@ -144,16 +156,30 @@ export default function MenusPage() {
                 </div>
 
                 <div className={styles.filterBar}>
-                    <label>Lọc theo vai trò:</label>
-                    <select
-                        value={roleFilter}
-                        onChange={(e) => setRoleFilter(e.target.value)}
-                    >
-                        <option value="">Tất cả</option>
-                        <option value="admin">Admin</option>
-                        <option value="lecturer">Giảng viên</option>
-                        <option value="student">Sinh viên</option>
-                    </select>
+                    <div className={styles.filters}>
+                        <div className={styles.filterGroup}>
+                            <label>Lọc theo vai trò:</label>
+                            <select
+                                value={roleFilter}
+                                onChange={(e) => setRoleFilter(e.target.value)}
+                            >
+                                <option value="">Tất cả</option>
+                                <option value="admin">Admin</option>
+                                <option value="lecturer">Giảng viên</option>
+                                <option value="student">Sinh viên</option>
+                            </select>
+                        </div>
+                        <div className={styles.filterGroup}>
+                            <label className={styles.checkboxGroup}>
+                                <input
+                                    type="checkbox"
+                                    checked={includeDeleted}
+                                    onChange={(e) => setIncludeDeleted(e.target.checked)}
+                                />
+                                <span>Hiện mục đã xóa</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 {error && <div className={styles.error}>{error}</div>}
@@ -170,6 +196,7 @@ export default function MenusPage() {
                                     <th>Đường dẫn</th>
                                     <th>Icon</th>
                                     <th>Vai trò</th>
+                                    <th>Trạng thái</th>
                                     <th>Menu cha</th>
                                     <th>Thứ tự</th>
                                     <th>Hành động</th>
@@ -178,13 +205,13 @@ export default function MenusPage() {
                             <tbody>
                                 {menus.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className={styles.emptyRow}>
+                                        <td colSpan={9} className={styles.emptyRow}>
                                             Không có menu nào
                                         </td>
                                     </tr>
                                 ) : (
                                     menus.map((menu) => (
-                                        <tr key={menu.menu_id}>
+                                        <tr key={menu.menu_id} className={menu.is_deleted ? styles.deletedRow : ''}>
                                             <td>{menu.menu_id}</td>
                                             <td className={styles.titleCell}>
                                                 {menu.parent_id && <span className={styles.childIndicator}>↳</span>}
@@ -197,23 +224,40 @@ export default function MenusPage() {
                                                     {menu.role_name}
                                                 </span>
                                             </td>
+                                            <td>
+                                                <span className={`${styles.statusBadge} ${menu.is_deleted ? styles.deleted : styles.active}`}>
+                                                    {menu.is_deleted ? 'Đã xóa' : 'Hoạt động'}
+                                                </span>
+                                            </td>
                                             <td>{getParentTitle(menu.parent_id)}</td>
                                             <td>{menu.order_index}</td>
                                             <td className={styles.actionsCell}>
-                                                <button
-                                                    onClick={() => openEditModal(menu)}
-                                                    className={styles.editBtn}
-                                                    title="Sửa"
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => setDeleteConfirm(menu.menu_id)}
-                                                    className={styles.deleteBtn}
-                                                    title="Xóa"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                {!menu.is_deleted ? (
+                                                    <>
+                                                        <button
+                                                            onClick={() => openEditModal(menu)}
+                                                            className={styles.editBtn}
+                                                            title="Sửa"
+                                                        >
+                                                            <Pencil size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setDeleteConfirm(menu.menu_id)}
+                                                            className={styles.deleteBtn}
+                                                            title="Xóa"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleRestore(menu.menu_id)}
+                                                        className={styles.restoreBtn}
+                                                        title="Khôi phục"
+                                                    >
+                                                        <RotateCcw size={16} />
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -325,7 +369,7 @@ export default function MenusPage() {
                     <div className={styles.modalOverlay}>
                         <div className={styles.confirmModal}>
                             <h3>Xác nhận xóa</h3>
-                            <p>Bạn có chắc chắn muốn xóa menu này? Hành động này không thể hoàn tác.</p>
+                            <p>Bạn có chắc chắn muốn xóa menu này? Hành động này sẽ ẩn menu khỏi người dùng.</p>
                             <div className={styles.confirmActions}>
                                 <button
                                     onClick={() => setDeleteConfirm(null)}

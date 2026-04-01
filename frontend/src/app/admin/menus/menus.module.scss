@@ -43,11 +43,24 @@
 .filterBar {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    justify-content: space-between;
+    gap: 1.5rem;
     margin-bottom: 1.5rem;
     padding: 1rem;
     background-color: #1f2937;
     border-radius: 0.5rem;
+
+    .filters {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .filterGroup {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
 
     label {
         font-size: 0.875rem;
@@ -65,6 +78,26 @@
         &:focus {
             outline: 2px solid #4f46e5;
             border-color: transparent;
+        }
+    }
+
+    .checkboxGroup {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        user-select: none;
+
+        input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+            accent-color: #4f46e5;
+        }
+
+        span {
+            font-size: 0.875rem;
+            color: #d1d5db;
         }
     }
 }
@@ -117,6 +150,15 @@
 
             &:hover {
                 background-color: #374151;
+            }
+
+            &.deletedRow {
+                opacity: 0.6;
+                background-color: rgba(239, 68, 68, 0.05);
+
+                &:hover {
+                    background-color: rgba(239, 68, 68, 0.1);
+                }
             }
         }
 
@@ -392,4 +434,40 @@
     &:hover {
         background-color: #b91c1c;
     }
-}
+    }
+
+    .statusBadge {
+    padding: 0.125rem 0.5rem;
+    display: inline-flex;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+
+    &.active {
+        background-color: rgba(34, 197, 94, 0.2);
+        color: #4ade80;
+    }
+
+    &.deleted {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+    }
+    }
+
+    .restoreBtn {
+    padding: 0.375rem;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+
+    &:hover {
+        transform: scale(1.1);
+        background-color: rgba(34, 197, 94, 0.4);
+    }
+    }
